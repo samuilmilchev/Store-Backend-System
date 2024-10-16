@@ -5,9 +5,9 @@ VisualStudioVersion = 17.10.35013.160
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApp1", "WebApp1\WebApp1.csproj", "{37C91BDE-4182-470D-843A-FEDEA7EC5104}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Business WebApp1", "Business WebApp1\Business WebApp1.csproj", "{1DB6FE9C-6211-497B-8BF8-5343CD0A0F3E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BusinessWebApp1", "Business WebApp1\BusinessWebApp1.csproj", "{1DB6FE9C-6211-497B-8BF8-5343CD0A0F3E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DAL WebApp1", "DAL WebApp1\DAL WebApp1.csproj", "{13562ED0-5D11-4BC2-A3CA-C2CFA5A069D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DALWebApp1", "DAL WebApp1\DALWebApp1.csproj", "{13562ED0-5D11-4BC2-A3CA-C2CFA5A069D9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp1.Tests", "WebApp1.Tests\WebApp1.Tests.csproj", "{91D7DD62-7FF7-47E5-B6E4-48643B2F9C4A}"
 EndProject

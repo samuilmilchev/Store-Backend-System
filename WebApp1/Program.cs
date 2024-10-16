@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using WebApp1.Data;
 using AutoMapper;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using WebApp1.HealthCheck;
 
 namespace WebApp1
 {
@@ -31,6 +33,12 @@ namespace WebApp1
                 .AddEntityFrameworkStores<ApplicationDbContext>();
             builder.Services.AddRazorPages();
 
+            builder.Services.AddHealthChecks()
+    .AddCheck("SQL Connection Health Check",
+              new SqlConnectionHealthCheck(connectionString),
+              HealthStatus.Unhealthy,
+              tags: new[] { "sql" });
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -57,6 +65,8 @@ namespace WebApp1
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "WebApp1 API V1");
                 options.RoutePrefix = "swagger";
             });
+
+            app.MapHealthChecks("/hc");
 
             app.MapRazorPages();
             app.MapControllers();
