@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using WebApp1.Data;
+using AutoMapper;
 
 namespace WebApp1
 {
@@ -12,6 +13,8 @@ namespace WebApp1
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddControllers();
+
+            builder.Services.AddAutoMapper(typeof(Program));
 
             builder.Services.AddSwaggerGen(options =>
             {

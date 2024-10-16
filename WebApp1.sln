@@ -5,9 +5,11 @@ VisualStudioVersion = 17.10.35013.160
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApp1", "WebApp1\WebApp1.csproj", "{37C91BDE-4182-470D-843A-FEDEA7EC5104}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Business WebApp1", "Business WebApp1\Business WebApp1.csproj", "{1DB6FE9C-6211-497B-8BF8-5343CD0A0F3E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Business WebApp1", "Business WebApp1\Business WebApp1.csproj", "{1DB6FE9C-6211-497B-8BF8-5343CD0A0F3E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAL WebApp1", "DAL WebApp1\DAL WebApp1.csproj", "{13562ED0-5D11-4BC2-A3CA-C2CFA5A069D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DAL WebApp1", "DAL WebApp1\DAL WebApp1.csproj", "{13562ED0-5D11-4BC2-A3CA-C2CFA5A069D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp1.Tests", "WebApp1.Tests\WebApp1.Tests.csproj", "{91D7DD62-7FF7-47E5-B6E4-48643B2F9C4A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{13562ED0-5D11-4BC2-A3CA-C2CFA5A069D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{13562ED0-5D11-4BC2-A3CA-C2CFA5A069D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{13562ED0-5D11-4BC2-A3CA-C2CFA5A069D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{91D7DD62-7FF7-47E5-B6E4-48643B2F9C4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91D7DD62-7FF7-47E5-B6E4-48643B2F9C4A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91D7DD62-7FF7-47E5-B6E4-48643B2F9C4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91D7DD62-7FF7-47E5-B6E4-48643B2F9C4A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
