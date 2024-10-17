@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 
 namespace WebApp1.Controllers.API
 {
@@ -11,7 +10,7 @@ namespace WebApp1.Controllers.API
         [HttpGet("getinfo")]
         public IActionResult GetInfo()
         {
-            return Ok(new { message = "Hello World"});
+            return Ok(new { message = "Hello World" });
         }
     }
 }
