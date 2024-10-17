@@ -1,9 +1,8 @@
+using DAL.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
-using WebApp1.Data;
-using AutoMapper;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.OpenApi.Models;
 using WebApp1.HealthCheck;
 
 namespace WebApp1
@@ -24,20 +23,22 @@ namespace WebApp1
             });
 
             // Add services to the container.
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+            builder.Services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
             builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<ApplicationDbContext>();
+                            .AddEntityFrameworkStores<ApplicationDbContext>();
+
             builder.Services.AddRazorPages();
 
-            builder.Services.AddHealthChecks()
-    .AddCheck("SQL Connection Health Check",
-              new SqlConnectionHealthCheck(connectionString),
-              HealthStatus.Unhealthy,
-              tags: new[] { "sql" });
+            builder.Services.AddHealthChecks().AddCheck("SQL Connection Health Check",
+                                                        new SqlConnectionHealthCheck(connectionString),
+                                                        HealthStatus.Unhealthy,
+                                                        tags: new[] { "sql" });
 
             var app = builder.Build();
 
