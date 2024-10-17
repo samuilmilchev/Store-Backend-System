@@ -1,8 +1,9 @@
-using DAL.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
+using WebApp1.Data;
+using AutoMapper;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using WebApp1.HealthCheck;
 
 namespace WebApp1

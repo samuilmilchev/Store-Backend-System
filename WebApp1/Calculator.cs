@@ -1,4 +1,4 @@
-﻿namespace Business
+﻿namespace WebApp1
 {
     public class Calculator
     {
