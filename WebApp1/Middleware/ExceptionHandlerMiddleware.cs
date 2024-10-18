@@ -5,7 +5,7 @@ namespace WebApp1.Middleware
 {
     public static class ExceptionHandlerMiddleware
     {
-        public static void UseCustomExceptionHandler(this IApplicationBuilder app)
+        public static void UseCustomExceptionHandler(this IApplicationBuilder app, IHostEnvironment env) // Accepting the environment as a parameter
         {
             app.UseExceptionHandler(errorApp =>
             {
@@ -27,10 +27,26 @@ namespace WebApp1.Middleware
                             _ => StatusCodes.Status500InternalServerError // Default for unknown exceptions
                         };
 
-                        // Send a user-friendly response message
-                        var responseMessage = context.Response.StatusCode == StatusCodes.Status500InternalServerError
-                            ? "An unexpected error occurred. Please contact support."
-                            : "An unexpected error occurred. Please try again later.";
+                        string responseMessage;
+
+                        if (env.IsDevelopment())
+                        {
+                            // In development, include the error message and stack trace
+                            responseMessage = $"Error: {ex.Message}\nStackTrace: {ex.StackTrace}";
+                        }
+                        else
+                        {
+                            // In production, use a user-friendly message
+                            if (context.Response.StatusCode == StatusCodes.Status500InternalServerError)
+                            {
+                                responseMessage = "An unexpected error occurred. Please contact support.";
+                            }
+                            else
+                            {
+                                // For other error codes, return the original error message
+                                responseMessage = ex.Message; // Keeps the original message for non-500 errors
+                            }
+                        }
 
                         await context.Response.WriteAsync(responseMessage);
                     }

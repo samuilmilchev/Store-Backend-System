@@ -48,7 +48,9 @@ namespace WebApp1
 
             var app = builder.Build();
 
-            app.UseCustomExceptionHandler();
+            //app.UseCustomExceptionHandler(app.Environment);
+
+            app.HandleExceptions();
 
             app.UseRouting();
 
