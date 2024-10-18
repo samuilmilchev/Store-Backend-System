@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Diagnostics;
 using Serilog;
+using System.Text.Json;
+using WebApp1.Models;
 
 namespace WebApp1.Middleware
 {
     public static class ExceptionHandlerMiddleware
     {
-        public static void UseCustomExceptionHandler(this IApplicationBuilder app, IHostEnvironment env) // Accepting the environment as a parameter
+        public static void UseCustomExceptionHandler(this IApplicationBuilder app, IHostEnvironment env)
         {
             app.UseExceptionHandler(errorApp =>
             {
@@ -27,28 +29,29 @@ namespace WebApp1.Middleware
                             _ => StatusCodes.Status500InternalServerError // Default for unknown exceptions
                         };
 
-                        string responseMessage;
+                        // Create the custom error response object
+                        string message;
+                        string stackTrace;
 
                         if (env.IsDevelopment())
                         {
-                            // In development, include the error message and stack trace
-                            responseMessage = $"Error: {ex.Message}\nStackTrace: {ex.StackTrace}";
+                            message = ex.Message;
+                            stackTrace = ex.StackTrace; // Show stack trace in development only
                         }
                         else
                         {
-                            // In production, use a user-friendly message
-                            if (context.Response.StatusCode == StatusCodes.Status500InternalServerError)
-                            {
-                                responseMessage = "An unexpected error occurred. Please contact support.";
-                            }
-                            else
-                            {
-                                // For other error codes, return the original error message
-                                responseMessage = ex.Message; // Keeps the original message for non-500 errors
-                            }
+                            message = "An unexpected error occurred. Please contact support.";
+                            stackTrace = null; // Don't expose stack trace in production
                         }
 
-                        await context.Response.WriteAsync(responseMessage);
+                        var customErrorResponse = new CustomErrorResponse(message, stackTrace);
+
+                        // Set the response content type to JSON
+                        context.Response.ContentType = "application/json";
+
+                        // Serialize the custom error response to JSON and write it to the response
+                        var jsonResponse = JsonSerializer.Serialize(customErrorResponse);
+                        await context.Response.WriteAsync(jsonResponse);
                     }
                 });
             });
