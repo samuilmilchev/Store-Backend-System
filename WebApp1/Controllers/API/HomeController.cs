@@ -6,10 +6,18 @@ namespace WebApp1.Controllers.API
     [ApiController]
     public class HomeController : ControllerBase
     {
+        private readonly ILogger<HomeController> _logger;
+
+        public HomeController(ILogger<HomeController> logger)
+        {
+            _logger = logger;
+        }
 
         [HttpGet("getinfo")]
         public IActionResult GetInfo()
         {
+            _logger.LogInformation("GetInfo endpoint was called.");
+
             return Ok(new { message = "Hello World" });
         }
     }

@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.OpenApi.Models;
+using Serilog;
 using WebApp1.HealthCheck;
+using WebApp1.Middleware;
 
 namespace WebApp1
 {
@@ -12,6 +14,12 @@ namespace WebApp1
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration) // Load from appsettings.json or appsettings.Development.json
+                .CreateLogger();
+
+            builder.Host.UseSerilog();
 
             builder.Services.AddControllers();
 
@@ -40,23 +48,23 @@ namespace WebApp1
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            app.UseCustomExceptionHandler(app.Environment);
+
+            app.UseRouting();
+
+            // Use this condition to set the appropriate error handling
             if (app.Environment.IsDevelopment())
             {
-                app.UseMigrationsEndPoint();
+                // Comment out this line to test your global handler
+                // app.UseDeveloperExceptionPage(); 
             }
             else
             {
-                app.UseExceptionHandler("/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
+                app.UseHsts(); // Use HSTS for production
             }
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
-            app.UseRouting();
-
             app.UseAuthorization();
             app.UseSwagger();
             app.UseSwaggerUI(options =>
@@ -66,11 +74,12 @@ namespace WebApp1
             });
 
             app.MapHealthChecks("/hc");
-
             app.MapRazorPages();
             app.MapControllers();
 
             app.Run();
+
+            Log.CloseAndFlush();
         }
     }
 }
