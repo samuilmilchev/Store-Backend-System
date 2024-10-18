@@ -18,8 +18,6 @@ namespace WebApp1.Controllers.API
         {
             _logger.LogInformation("GetInfo endpoint was called.");
 
-            //throw new Exception("This is a simple exception for testing.");
-
             return Ok(new { message = "Hello World" });
         }
     }
