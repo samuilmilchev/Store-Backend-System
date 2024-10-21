@@ -1,10 +1,11 @@
 using DAL.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
-using WebApp1.HealthCheck;
+using System.Text;
 using WebApp1.Middleware;
 
 namespace WebApp1
@@ -21,6 +22,42 @@ namespace WebApp1
 
             builder.Host.UseSerilog();
 
+            // Add services to the container
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+            // Register ApplicationDbContext with Identity
+            builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseSqlServer(connectionString));
+
+            // Add ASP.NET Core Identity
+            builder.Services.AddIdentity<IdentityUser, IdentityRole>()
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();  // Token provider is required for password reset, email confirmation, etc.
+
+            // Configure JWT Authentication
+            var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]);
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = builder.Configuration["Jwt:Issuer"],
+                    ValidAudience = builder.Configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(key)
+                };
+            });
+
+            builder.Services.AddHealthChecks();
+            builder.Services.AddRazorPages();
             builder.Services.AddControllers();
 
             builder.Services.AddAutoMapper(typeof(Program));
@@ -30,21 +67,21 @@ namespace WebApp1
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Virtual Wallet API V1", Version = "v1" });
             });
 
-            // Add services to the container.
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
-            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+            //        // Add services to the container.
+            //        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            //        builder.Services.AddDbContext<ApplicationDbContext>(options =>
+            //            options.UseSqlServer(connectionString));
+            //        builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                .AddEntityFrameworkStores<ApplicationDbContext>();
-            builder.Services.AddRazorPages();
+            //        builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            //            .AddEntityFrameworkStores<ApplicationDbContext>();
+            //        builder.Services.AddRazorPages();
 
-            builder.Services.AddHealthChecks()
-    .AddCheck("SQL Connection Health Check",
-              new SqlConnectionHealthCheck(connectionString),
-              HealthStatus.Unhealthy,
-              tags: new[] { "sql" });
+            //        builder.Services.AddHealthChecks()
+            //.AddCheck("SQL Connection Health Check",
+            //          new SqlConnectionHealthCheck(connectionString),
+            //          HealthStatus.Unhealthy,
+            //          tags: new[] { "sql" });
 
             var app = builder.Build();
 
@@ -65,6 +102,7 @@ namespace WebApp1
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+            app.UseAuthentication();
             app.UseAuthorization();
             app.UseSwagger();
             app.UseSwaggerUI(options =>
