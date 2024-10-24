@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace WebApp1.Controllers.API
 {
@@ -13,6 +14,7 @@ namespace WebApp1.Controllers.API
             _logger = logger;
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpGet("getinfo")]
         public IActionResult GetInfo()
         {
