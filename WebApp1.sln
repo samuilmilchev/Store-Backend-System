@@ -14,9 +14,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WebApp1.Tests", "WebApp1.Te
 		{330EDC00-9C08-4FFE-8639-19177AA9DFC3} = {330EDC00-9C08-4FFE-8639-19177AA9DFC3}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DAL", "DAL\DAL.csproj", "{033475BD-8C39-411E-AA3D-3D6D36FF624B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DAL", "DAL\DAL.csproj", "{033475BD-8C39-411E-AA3D-3D6D36FF624B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Business", "Business\Business.csproj", "{330EDC00-9C08-4FFE-8639-19177AA9DFC3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Business", "Business\Business.csproj", "{330EDC00-9C08-4FFE-8639-19177AA9DFC3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "Shared\Shared.csproj", "{540FA671-7FB6-4EAE-BE17-E3E514BBD384}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -40,6 +42,10 @@ Global
 		{330EDC00-9C08-4FFE-8639-19177AA9DFC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{330EDC00-9C08-4FFE-8639-19177AA9DFC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{330EDC00-9C08-4FFE-8639-19177AA9DFC3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{540FA671-7FB6-4EAE-BE17-E3E514BBD384}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{540FA671-7FB6-4EAE-BE17-E3E514BBD384}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{540FA671-7FB6-4EAE-BE17-E3E514BBD384}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{540FA671-7FB6-4EAE-BE17-E3E514BBD384}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

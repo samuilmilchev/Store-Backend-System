@@ -1,3 +1,5 @@
+using Business.Intefraces;
+using Business.Services;
 using DAL.Data;
 using DAL.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -41,6 +43,7 @@ namespace WebApp1
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
             builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
 
             // Configure JWT Authentication
             var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]);

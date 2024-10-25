@@ -1,4 +1,5 @@
-﻿using System.Net.Mail;
+﻿using Microsoft.Extensions.Configuration;
+using System.Net.Mail;
 
 namespace WebApp1.Services
 {

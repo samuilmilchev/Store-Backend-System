@@ -1,5 +1,6 @@
 ﻿using DAL.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace WebApp1.Services
 {

@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using WebApp1.Controllers.API;
+﻿using Shared;
+using System.ComponentModel.DataAnnotations;
 
 namespace WebApp1.Tests.ControllerTests
 {
