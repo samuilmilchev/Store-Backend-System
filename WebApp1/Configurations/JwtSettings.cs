@@ -15,7 +15,6 @@ namespace WebApp1.Configurations
 
         [Range(1, int.MaxValue, ErrorMessage = "Expiration time must be greater than 0.")]
         public int ExpireMinutes { get; set; }
-
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
             if (string.IsNullOrEmpty(Key))

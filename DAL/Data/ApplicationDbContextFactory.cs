@@ -21,7 +21,21 @@ namespace DAL.Data
 
             optionsBuilder.UseSqlServer(connectionString);
 
-            return new ApplicationDbContext(optionsBuilder.Options);
+            var context = new ApplicationDbContext(optionsBuilder.Options);
+
+            // Apply pending migrations
+            ApplyPendingMigrations(context);
+
+            return context;
+        }
+
+        private void ApplyPendingMigrations(ApplicationDbContext context)
+        {
+            // Apply pending migrations if there are any
+            if (context.Database.GetPendingMigrations().Any())
+            {
+                context.Database.Migrate();
+            }
         }
     }
 }

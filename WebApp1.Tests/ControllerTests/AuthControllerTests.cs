@@ -134,8 +134,11 @@ namespace WebApp1.Tests.ControllerTests
             var signUpRequest = new SignUpRequest { Email = "test@test.com", Password = "Password123!" };
             var user = new ApplicationUser { Email = signUpRequest.Email, UserName = signUpRequest.Email };
 
+            // Mock UserManager to return success when creating a user
             _mockUserManager.Setup(um => um.CreateAsync(It.IsAny<ApplicationUser>(), It.IsAny<string>()))
                 .ReturnsAsync(IdentityResult.Success);
+
+            // Mock RoleManager to indicate the "User" role exists
             _mockRoleManager.Setup(rm => rm.RoleExistsAsync("User"))
                 .ReturnsAsync(true);
 
@@ -147,12 +150,15 @@ namespace WebApp1.Tests.ControllerTests
             _mockUrlHelper.Setup(x => x.Action(It.IsAny<UrlActionContext>()))
                 .Returns("http://test-confirmation-link");
 
+            // Mock the AuthService's SignUpAsync method to return success
+            _mockAuthService.Setup(authService => authService.SignUpAsync(signUpRequest))
+                .ReturnsAsync((true, user.Id.ToString(), "token", null));
+
             // Act
             var result = await _authController.SignUp(signUpRequest);
 
             // Assert
             Assert.IsType<CreatedResult>(result);
-            _mockEmailService.Verify(es => es.SendEmailConfirmation(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
         }
 
         [Fact]

@@ -19,8 +19,6 @@ namespace Business.Services
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
 
-
-
         public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, IConfiguration configuration, RoleManager<ApplicationRole> roleManager, IEmailService emailService)
         {
             _userManager = userManager;
@@ -92,7 +90,7 @@ namespace Business.Services
                 {
                     await _emailService.SendEmailConfirmation(request.Email, confirmationLink);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return (false, null, null, new[] { "Failed to send email confirmation." });
                 }
@@ -113,7 +111,6 @@ namespace Business.Services
 
             return await _userManager.ConfirmEmailAsync(user, token);
         }
-
         private async Task<string> GenerateJwtToken(ApplicationUser user)
         {
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));

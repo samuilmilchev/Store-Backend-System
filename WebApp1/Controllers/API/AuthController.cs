@@ -17,8 +17,6 @@ namespace WebApp1.Controllers.API
         private readonly IConfiguration _configuration;
         private readonly IEmailService _emailService;
         private readonly IAuthService _authService;
-
-
         public AuthController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, RoleManager<ApplicationRole> roleManager, IConfiguration configuration, IEmailService emailService, IAuthService authService)
         {
             _userManager = userManager;
