@@ -10,8 +10,6 @@ namespace DAL.Data
             : base(options)
         {
         }
-
-        // You can add DbSets for other entities here
-        // public DbSet<YourEntity> YourEntities { get; set; }
+        public DbSet<UserAddress> UserAddresses { get; set; }
     }
 }

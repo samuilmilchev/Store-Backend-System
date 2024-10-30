@@ -80,6 +80,13 @@ namespace Business.Services
                 // Assign the "User" role to the newly created user
                 await _userManager.AddToRoleAsync(user, "User");
 
+                var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                        new Claim(ClaimTypes.Name, user.UserName) // Optionally, you can add the username as a claim
+                    };
+                await _userManager.AddClaimsAsync(user, claims);
+
                 // Generate email confirmation token
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
