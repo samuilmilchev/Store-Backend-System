@@ -194,7 +194,7 @@ namespace WebApp1.Tests.ControllerTests
         }
 
         [Fact]
-        public async Task UpdatePasswordAsync_IncorrectOldPassword_ReturnsFalse()
+        public async Task UpdatePasswordAsync_IncorrectOldPassword_ThrowsMyApplicationException()
         {
             // Arrange
             var userId = Guid.NewGuid();
@@ -208,11 +208,11 @@ namespace WebApp1.Tests.ControllerTests
             _userManagerMock.Setup(m => m.ChangePasswordAsync(user, oldPassword, newPassword))
                 .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Incorrect password." }));
 
-            // Act
-            var result = await _userService.UpdatePasswordAsync(userId, oldPassword, newPassword);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(
+                async () => await _userService.UpdatePasswordAsync(userId, oldPassword, newPassword));
 
-            // Assert
-            Assert.False(result);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
             _userManagerMock.Verify(m => m.ChangePasswordAsync(user, oldPassword, newPassword), Times.Once);
         }
 

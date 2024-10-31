@@ -57,7 +57,18 @@ namespace Business.Services
                 throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
             }
 
+            if (oldPassword == newPassword)
+            {
+                throw new MyApplicationException(ErrorStatus.InvalidData, "New password is same as old password.");
+            }
+
             var result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
+
+            if (!result.Succeeded)
+            {
+                throw new MyApplicationException(ErrorStatus.InvalidData);
+            }
+
             return result.Succeeded;
         }
 

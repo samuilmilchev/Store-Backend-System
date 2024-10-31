@@ -32,22 +32,11 @@ namespace WebApp1.Controllers.API
         {
             var userIdClaim = User.Claims
            .FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier && Guid.TryParse(claim.Value, out _));
-            if (userIdClaim == null)
-            {
-                return Unauthorized();
-            }
 
             var userId = Guid.Parse(userIdClaim.Value);
 
-            try
-            {
-                await _userService.UpdateUserAsync(userId, updateModel);
-                return Ok();
-            }
-            catch (MyApplicationException ex) when (ex.ErrorStatus == ErrorStatus.NotFound)
-            {
-                return NotFound();
-            }
+            await _userService.UpdateUserAsync(userId, updateModel);
+            return Ok();
         }
 
         [Authorize]
@@ -56,23 +45,13 @@ namespace WebApp1.Controllers.API
         {
             var userIdClaim = User.Claims
            .FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier && Guid.TryParse(claim.Value, out _));
-            if (userIdClaim == null)
-            {
-                return Unauthorized();
-            }
-
-            if (passwordUpdateModel.NewPassword == passwordUpdateModel.OldPassword)
-            {
-                ModelState.AddModelError("NewPassword", "New password cannot be the same as the old password.");
-                return BadRequest(ModelState);
-            }
 
             var userId = Guid.Parse(userIdClaim.Value);
 
             bool success = await _userService.UpdatePasswordAsync(userId, passwordUpdateModel.OldPassword, passwordUpdateModel.NewPassword);
             if (!success)
             {
-                return BadRequest("Password update failed.");
+                throw new MyApplicationException(ErrorStatus.InvalidData);
             }
 
             return NoContent();

@@ -131,32 +131,19 @@ namespace WebApp1.Tests.ControllerTests
         }
 
         [Fact]
-        public async Task UpdateUser_NonExistentUser_ReturnsNotFound()
-        {
-            // Arrange
-            var updateModel = new UserUpdateModel { UserName = "NonExistentUser", Email = "nonexistent@example.com" };
-            _userServiceMock.Setup(us => us.UpdateUserAsync(It.IsAny<Guid>(), updateModel))
-                .ThrowsAsync(new MyApplicationException(ErrorStatus.NotFound, "User not found"));
-
-            // Act
-            var result = await _controller.UpdateUser(updateModel);
-
-            // Assert
-            Assert.IsType<NotFoundResult>(result);
-        }
-
-        [Fact]
-        public async Task UpdatePassword_IncorrectOldPassword_ReturnsBadRequest()
+        public async Task UpdatePassword_IncorrectOldPassword_ThrowsMyApplicationException()
         {
             // Arrange
             var passwordUpdateModel = new PasswordUpdateModel { OldPassword = "WrongPassword", NewPassword = "NewPassword" };
-            _userServiceMock.Setup(us => us.UpdatePasswordAsync(It.IsAny<Guid>(), passwordUpdateModel.OldPassword, passwordUpdateModel.NewPassword)).ReturnsAsync(false);
+            _userServiceMock.Setup(us => us.UpdatePasswordAsync(It.IsAny<Guid>(), passwordUpdateModel.OldPassword, passwordUpdateModel.NewPassword))
+                .ThrowsAsync(new MyApplicationException(ErrorStatus.InvalidData));
 
-            // Act
-            var result = await _controller.UpdatePassword(passwordUpdateModel);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(
+                async () => await _controller.UpdatePassword(passwordUpdateModel));
 
             // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
@@ -174,22 +161,22 @@ namespace WebApp1.Tests.ControllerTests
 
 
         [Fact]
-        public async Task UpdatePassword_WeakNewPassword_ReturnsBadRequest()
+        public async Task UpdatePassword_WeakNewPassword_ThrowsMyApplicationException()
         {
             // Arrange
             var passwordUpdateModel = new PasswordUpdateModel { OldPassword = "OldPassword", NewPassword = "123" };
 
             _userServiceMock
                 .Setup(us => us.UpdatePasswordAsync(It.IsAny<Guid>(), passwordUpdateModel.OldPassword, passwordUpdateModel.NewPassword))
-                .ReturnsAsync(false);
+                .ThrowsAsync(new MyApplicationException(ErrorStatus.InvalidData, "Password does not meet complexity requirements."));
 
-            _controller.ModelState.AddModelError("NewPassword", "Password does not meet complexity requirements.");
-
-            // Act
-            var result = await _controller.UpdatePassword(passwordUpdateModel);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(
+                async () => await _controller.UpdatePassword(passwordUpdateModel));
 
             // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Password does not meet complexity requirements.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
@@ -204,21 +191,5 @@ namespace WebApp1.Tests.ControllerTests
             // Assert
             Assert.IsType<NotFoundResult>(result);
         }
-
-
-        [Fact]
-        public async Task UpdatePassword_SameOldAndNewPassword_ReturnsBadRequest()
-        {
-            // Arrange
-            var passwordUpdateModel = new PasswordUpdateModel { OldPassword = "SamePassword", NewPassword = "SamePassword" };
-            _controller.ModelState.AddModelError("NewPassword", "New password cannot be the same as the old password.");
-
-            // Act
-            var result = await _controller.UpdatePassword(passwordUpdateModel);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
-        }
-
     }
 }
