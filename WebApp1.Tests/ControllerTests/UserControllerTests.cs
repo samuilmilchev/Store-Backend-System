@@ -146,19 +146,6 @@ namespace WebApp1.Tests.ControllerTests
             Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
-        [Fact]
-        public async Task GetUserProfile_NonExistentUser_ReturnsNotFound()
-        {
-            // Arrange
-            _userServiceMock.Setup(us => us.GetUserProfileAsync(It.IsAny<Guid>())).ReturnsAsync((UserProfileModel)null);
-
-            // Act
-            var result = await _controller.GetUserProfile();
-
-            // Assert
-            Assert.IsType<NotFoundResult>(result);
-        }
-
 
         [Fact]
         public async Task UpdatePassword_WeakNewPassword_ThrowsMyApplicationException()
@@ -177,19 +164,6 @@ namespace WebApp1.Tests.ControllerTests
             // Assert
             Assert.Equal("Password does not meet complexity requirements.", exception.Message);
             Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
-        }
-
-        [Fact]
-        public async Task GetUserProfile_ValidUserNullProfile_ReturnsNoContent()
-        {
-            // Arrange
-            _userServiceMock.Setup(us => us.GetUserProfileAsync(It.IsAny<Guid>())).ReturnsAsync((UserProfileModel)null);
-
-            // Act
-            var result = await _controller.GetUserProfile();
-
-            // Assert
-            Assert.IsType<NotFoundResult>(result);
         }
     }
 }

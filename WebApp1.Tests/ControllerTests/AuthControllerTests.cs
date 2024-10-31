@@ -1,4 +1,5 @@
-﻿using Business.Intefraces;
+﻿using Business.Exceptions;
+using Business.Intefraces;
 using DAL.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -151,17 +152,16 @@ namespace WebApp1.Tests.ControllerTests
         }
 
         [Fact]
-        public async Task SignUp_InvalidModel_ReturnsBadRequest()
+        public async Task SignUp_InvalidModel_ThrowsMyApplicationException()
         {
             // Arrange
             _authController.ModelState.AddModelError("Email", "Invalid email format");
             var signUpRequest = new SignUpRequest { Email = "invalid", Password = "Password123!" };
 
-            // Act
-            var result = await _authController.SignUp(signUpRequest);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.SignUp(signUpRequest));
+            Assert.Equal("Sign-up failed due to invalid data.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
@@ -184,7 +184,7 @@ namespace WebApp1.Tests.ControllerTests
         }
 
         [Fact]
-        public async Task SignUp_UserAlreadyExists_ReturnsBadRequest()
+        public async Task SignUp_UserAlreadyExists_ThrowsMyApplicationException()
         {
             // Arrange
             var signUpRequest = new SignUpRequest { Email = "existing@test.com", Password = "Password123!" };
@@ -193,15 +193,14 @@ namespace WebApp1.Tests.ControllerTests
             _mockUserManager.Setup(um => um.FindByEmailAsync(signUpRequest.Email))
                 .ReturnsAsync(existingUser);
 
-            // Act
-            var result = await _authController.SignUp(signUpRequest);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.SignUp(signUpRequest));
+            Assert.Equal("Sign-up failed due to invalid data.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
-        public async Task ConfirmEmail_InvalidToken_ReturnsBadRequest()
+        public async Task ConfirmEmail_InvalidToken_ThrowsMyApplicationException()
         {
             // Arrange
             var userId = Guid.NewGuid();
@@ -217,11 +216,10 @@ namespace WebApp1.Tests.ControllerTests
             _mockAuthService.Setup(a => a.ConfirmEmailAsync(userId.ToString(), invalidToken))
                 .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Invalid token." }));
 
-            // Act
-            var result = await _authController.ConfirmEmail(userId.ToString(), invalidToken);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.ConfirmEmail(userId.ToString(), invalidToken));
+            Assert.Equal("Email confirmation failed.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
@@ -249,7 +247,7 @@ namespace WebApp1.Tests.ControllerTests
         }
 
         [Fact]
-        public async Task SignUp_RoleCreationFails_ReturnsBadRequest()
+        public async Task SignUp_RoleCreationFails_ThrowsMyApplicationException()
         {
             // Arrange
             var signUpRequest = new SignUpRequest { Email = "test@test.com", Password = "Password123!" };
@@ -263,15 +261,14 @@ namespace WebApp1.Tests.ControllerTests
             _mockRoleManager.Setup(rm => rm.CreateAsync(It.IsAny<ApplicationRole>()))
                 .ReturnsAsync(IdentityResult.Failed(new IdentityError { Description = "Role creation failed." }));
 
-            // Act
-            var result = await _authController.SignUp(signUpRequest);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.SignUp(signUpRequest));
+            Assert.Equal("Sign-up failed due to invalid data.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
-        public async Task SignUp_InvalidEmailFormat_ReturnsBadRequest()
+        public async Task SignUp_InvalidEmailFormat_ThrowsMyApplicationException()
         {
             // Arrange
             var signUpRequest = new SignUpRequest { Email = "invalid-email-format", Password = "Password@123" };
@@ -284,97 +281,87 @@ namespace WebApp1.Tests.ControllerTests
             _mockRoleManager.Setup(rm => rm.RoleExistsAsync(It.IsAny<string>()))
                 .ReturnsAsync(false);
 
-            // Act
-            var result = await _authController.SignUp(signUpRequest);
-
-            // Assert
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.NotNull(badRequestResult.Value);
-            var errorMessages = badRequestResult.Value as SerializableError;
-            Assert.True(errorMessages.ContainsKey("Email"));
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.SignUp(signUpRequest));
+            Assert.Equal("Sign-up failed due to invalid data.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
 
         [Fact]
-        public async Task SignUp_EmptyEmail_ReturnsBadRequest()
+        public async Task SignUp_EmptyEmail_ThrowsMyApplicationException()
         {
             // Arrange
             var signUpRequest = new SignUpRequest { Email = "", Password = "Password123!" };
 
-            // Act
-            var result = await _authController.SignUp(signUpRequest);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.SignUp(signUpRequest));
+            Assert.Equal("Sign-up failed due to invalid data.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
-        public async Task SignUp_EmptyPassword_ReturnsBadRequest()
+        public async Task SignUp_EmptyPassword_ThrowsMyApplicationException()
         {
             // Arrange
             var signUpRequest = new SignUpRequest { Email = "test@test.com", Password = "" };
 
-            // Act
-            var result = await _authController.SignUp(signUpRequest);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.SignUp(signUpRequest));
+            Assert.Equal("Sign-up failed due to invalid data.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
-        public async Task SignUp_PasswordTooShort_ReturnsBadRequest()
+        public async Task SignUp_PasswordTooShort_ThrowsMyApplicationException()
         {
             // Arrange
             var signUpRequest = new SignUpRequest { Email = "test@test.com", Password = "short" };
 
-            // Act
-            var result = await _authController.SignUp(signUpRequest);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.SignUp(signUpRequest));
+            Assert.Equal("Sign-up failed due to invalid data.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
-        public async Task SignUp_PasswordWithoutUpperCase_ReturnsBadRequest()
+        public async Task SignUp_PasswordWithoutUpperCase_ThrowsMyApplicationException()
         {
             // Arrange
             var signUpRequest = new SignUpRequest { Email = "test@test.com", Password = "password" };
 
-            // Act
-            var result = await _authController.SignUp(signUpRequest);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.SignUp(signUpRequest));
+            Assert.Equal("Sign-up failed due to invalid data.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
-        public async Task SignUp_PasswordWithoutLowerCase_ReturnsBadRequest()
+        public async Task SignUp_PasswordWithoutLowerCase_ThrowsMyApplicationException()
         {
             // Arrange
             var signUpRequest = new SignUpRequest { Email = "test@test.com", Password = "PASSWORD123!" };
 
-            // Act
-            var result = await _authController.SignUp(signUpRequest);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.SignUp(signUpRequest));
+            Assert.Equal("Sign-up failed due to invalid data.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
-        public async Task SignUp_PasswordWithoutNumber_ReturnsBadRequest()
+        public async Task SignUp_PasswordWithoutNumber_ThrowsMyApplicationException()
         {
             // Arrange
             var signUpRequest = new SignUpRequest { Email = "test@test.com", Password = "Password!" };
 
-            // Act
-            var result = await _authController.SignUp(signUpRequest);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.SignUp(signUpRequest));
+            Assert.Equal("Sign-up failed due to invalid data.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
 
         [Fact]
-        public async Task SignUp_EmailServiceFails_ReturnsBadRequest()
+        public async Task SignUp_EmailServiceFails_ThrowsMyApplicationException()
         {
             // Arrange
             var signUpRequest = new SignUpRequest { Email = "test@test.com", Password = "Password123!" };
@@ -387,11 +374,10 @@ namespace WebApp1.Tests.ControllerTests
             _mockEmailService.Setup(es => es.SendEmailConfirmation(It.IsAny<string>(), It.IsAny<string>()))
                 .ThrowsAsync(new Exception("Email service failure"));
 
-            // Act
-            var result = await _authController.SignUp(signUpRequest);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _authController.SignUp(signUpRequest));
+            Assert.Equal("Sign-up failed due to invalid data.", exception.Message);
+            Assert.Equal(ErrorStatus.InvalidData, exception.ErrorStatus);
         }
     }
 }

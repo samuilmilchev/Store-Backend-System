@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Diagnostics;
+﻿using Business.Exceptions;
+using Microsoft.AspNetCore.Diagnostics;
 using Serilog;
 using System.Text.Json;
-using WebApp1.Models;
 
 namespace WebApp1.Middleware
 {
@@ -22,8 +22,15 @@ namespace WebApp1.Middleware
                         Log.Error(ex, "Global exception caught: {Message}, Path: {Path}, Method: {Method}, StackTrace: {StackTrace}",
                                   ex.Message, context.Request.Path, context.Request.Method, ex.StackTrace);
 
+                        // Determine response status code based on exception type
                         context.Response.StatusCode = ex switch
                         {
+                            MyApplicationException myAppEx => myAppEx.ErrorStatus switch
+                            {
+                                ErrorStatus.NotFound => StatusCodes.Status404NotFound,
+                                ErrorStatus.InvalidData => StatusCodes.Status400BadRequest,
+                                _ => StatusCodes.Status500InternalServerError
+                            },
                             InvalidOperationException _ => StatusCodes.Status400BadRequest,
                             UnauthorizedAccessException _ => StatusCodes.Status401Unauthorized,
                             _ => StatusCodes.Status500InternalServerError // Default for unknown exceptions
@@ -31,7 +38,8 @@ namespace WebApp1.Middleware
 
                         // Create the custom error response object
                         string message;
-                        string stackTrace;
+                        string stackTrace = null;
+                        var errorStatus = ex is MyApplicationException myAppException ? myAppException.ErrorStatus.ToString() : null;
 
                         if (env.IsDevelopment())
                         {
@@ -41,10 +49,14 @@ namespace WebApp1.Middleware
                         else
                         {
                             message = "An unexpected error occurred. Please contact support.";
-                            stackTrace = null; // Don't expose stack trace in production
                         }
 
-                        var customErrorResponse = new CustomErrorResponse(message, stackTrace);
+                        var customErrorResponse = new
+                        {
+                            Message = message,
+                            ErrorStatus = errorStatus,
+                            StackTrace = stackTrace
+                        };
 
                         // Set the response content type to JSON
                         context.Response.ContentType = "application/json";

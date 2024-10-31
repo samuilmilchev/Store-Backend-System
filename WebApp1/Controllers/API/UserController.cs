@@ -67,10 +67,6 @@ namespace WebApp1.Controllers.API
             var userId = Guid.Parse(userIdClaim.Value);
 
             var userProfile = await _userService.GetUserProfileAsync(userId);
-            if (userProfile == null)
-            {
-                return NotFound();
-            }
 
             return Ok(userProfile);
         }
