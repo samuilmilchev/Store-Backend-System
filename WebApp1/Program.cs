@@ -1,4 +1,5 @@
 using Business.Intefraces;
+using Business.Mappings;
 using Business.Services;
 using DAL.Data;
 using DAL.Entities;
@@ -73,6 +74,7 @@ namespace WebApp1
             builder.Services.AddControllers();
 
             builder.Services.AddAutoMapper(typeof(Program));
+            builder.Services.AddAutoMapper(typeof(UserProfile));
 
             builder.Services.AddSwaggerGen(options =>
             {

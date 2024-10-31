@@ -1,10 +1,11 @@
-﻿using Business.Intefraces;
+﻿using AutoMapper;
+using Business.Exceptions;
+using Business.Intefraces;
 using DAL.Data;
 using DAL.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Shared;
-using System.Text.RegularExpressions;
+using Shared.Models;
 
 namespace Business.Services
 {
@@ -12,55 +13,40 @@ namespace Business.Services
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _dbContext;
+        private readonly IMapper _mapper;
 
-        public UserService(UserManager<ApplicationUser> userManager, ApplicationDbContext dbContext)
+        public UserService(UserManager<ApplicationUser> userManager, ApplicationDbContext dbContext, IMapper mapper)
         {
             _userManager = userManager;
             _dbContext = dbContext;
+            _mapper = mapper;
         }
 
-        public async Task<bool> UpdateUserAsync(Guid userId, UserUpdateModel updateModel)
+        public async Task UpdateUserAsync(Guid userId, UserUpdateModel updateModel)
         {
-            if (!IsValidEmail(updateModel.Email))
-            {
-                return false;
-            }
-
             var user = await _userManager.Users
                 .Include(u => u.AddressDelivery)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
             if (user == null)
             {
-                return false;
+                throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
             }
 
-            user.UserName = updateModel.UserName;
-            user.Email = updateModel.Email;
-            user.PhoneNumber = updateModel.PhoneNumber;
+            _mapper.Map(updateModel, user);
 
-            if (user.AddressDelivery != null)
+            if (user.AddressDelivery == null && updateModel.AddressDelivery != null)
             {
-                if (updateModel.AddressDelivery != null)
-                {
-                    user.AddressDelivery = updateModel.AddressDelivery;
-                }
-            }
-            else if (updateModel.AddressDelivery != null)
-            {
-                var address = new UserAddress
-                {
-                    UserId = user.Id,
-                    AddressDelivery = updateModel.AddressDelivery.AddressDelivery
-                };
-                _dbContext.UserAddresses.Add(address);
+                var newAddress = _mapper.Map<UserAddress>(updateModel.AddressDelivery);
+                newAddress.UserId = user.Id;
+                _dbContext.UserAddresses.Add(newAddress);
             }
 
             await _userManager.UpdateAsync(user);
             await _dbContext.SaveChangesAsync();
 
-            return true;
         }
+
         public async Task<bool> UpdatePasswordAsync(Guid userId, string oldPassword, string newPassword)
         {
             var user = await _userManager.Users
@@ -68,7 +54,7 @@ namespace Business.Services
 
             if (user == null)
             {
-                return false;
+                throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
             }
 
             var result = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
@@ -83,22 +69,10 @@ namespace Business.Services
 
             if (user == null)
             {
-                return null;
+                throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
             }
 
-            return new UserProfileModel
-            {
-                UserName = user.UserName,
-                Email = user.Email,
-                PhoneNumber = user.PhoneNumber,
-                AddressDelivery = user.AddressDelivery.AddressDelivery
-            };
-        }
-
-        private bool IsValidEmail(string email)
-        {
-            return !string.IsNullOrWhiteSpace(email) &&
-                   Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+            return _mapper.Map<UserProfileModel>(user);
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Shared;
+using Shared.Models;
 
 namespace Business.Intefraces
 {

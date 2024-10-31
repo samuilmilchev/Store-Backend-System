@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Shared
+namespace Shared.Models
 {
-    public class LoginModel
+    public class SignUpRequest
     {
         [Required(ErrorMessage = "Email is required.")]
         [RegularExpression(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", ErrorMessage = "Invalid email format.")]

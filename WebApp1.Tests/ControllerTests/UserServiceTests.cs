@@ -1,11 +1,14 @@
-﻿using Business.Services;
+﻿using AutoMapper;
+using Business.Exceptions;
+using Business.Services;
 using DAL.Data;
 using DAL.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MockQueryable;
 using Moq;
-using Shared;
+using Shared.DTOs;
+using Shared.Models;
 
 namespace WebApp1.Tests.ControllerTests
 {
@@ -14,6 +17,7 @@ namespace WebApp1.Tests.ControllerTests
         private readonly UserService _userService;
         private readonly ApplicationDbContext _dbContext;
         private readonly Mock<UserManager<ApplicationUser>> _userManagerMock;
+        private readonly Mock<IMapper> _mapperMock;
 
         public UserServiceTests()
         {
@@ -26,7 +30,8 @@ namespace WebApp1.Tests.ControllerTests
             var store = new Mock<IUserStore<ApplicationUser>>();
             _userManagerMock = new Mock<UserManager<ApplicationUser>>(store.Object, null, null, null, null, null, null, null, null);
 
-            _userService = new UserService(_userManagerMock.Object, _dbContext);
+            _mapperMock = new Mock<IMapper>();
+            _userService = new UserService(_userManagerMock.Object, _dbContext, _mapperMock.Object);
         }
 
         [Fact]
@@ -39,7 +44,7 @@ namespace WebApp1.Tests.ControllerTests
                 UserName = "UpdatedUser",
                 Email = "updated@example.com",
                 PhoneNumber = "1234567890",
-                AddressDelivery = new UserAddress { AddressDelivery = "123 New St" }
+                AddressDelivery = new UserAddressDTO { AddressDelivery = "123 New St" }
             };
 
             var user = new ApplicationUser
@@ -57,11 +62,18 @@ namespace WebApp1.Tests.ControllerTests
             _userManagerMock.Setup(m => m.Users).Returns(_dbContext.Users);
             _userManagerMock.Setup(m => m.UpdateAsync(It.IsAny<ApplicationUser>())).ReturnsAsync(IdentityResult.Success);
 
+            _mapperMock.Setup(m => m.Map(updateModel, user)).Callback<UserUpdateModel, ApplicationUser>((src, dest) =>
+            {
+                dest.UserName = src.UserName;
+                dest.Email = src.Email;
+                dest.PhoneNumber = src.PhoneNumber;
+                dest.AddressDelivery = new UserAddress { AddressDelivery = src.AddressDelivery.AddressDelivery };
+            });
+
             // Act
-            var result = await _userService.UpdateUserAsync(userId, updateModel);
+            await _userService.UpdateUserAsync(userId, updateModel);
 
             // Assert
-            Assert.True(result);
             Assert.Equal("UpdatedUser", user.UserName);
             Assert.Equal("updated@example.com", user.Email);
             Assert.Equal("1234567890", user.PhoneNumber);
@@ -97,11 +109,27 @@ namespace WebApp1.Tests.ControllerTests
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var user = new ApplicationUser { Id = userId, UserName = "TestUser", Email = "test@example.com", PhoneNumber = "1234567890" };
-            user.AddressDelivery = new UserAddress { AddressDelivery = "Test Address" };
+            var user = new ApplicationUser
+            {
+                Id = userId,
+                UserName = "TestUser",
+                Email = "test@example.com",
+                PhoneNumber = "1234567890",
+                AddressDelivery = new UserAddress { AddressDelivery = "Test Address" }
+            };
+
+            var expectedProfile = new UserProfileModel
+            {
+                UserName = "TestUser",
+                Email = "test@example.com",
+                PhoneNumber = "1234567890",
+                AddressDelivery = "Test Address"
+            };
 
             _userManagerMock.Setup(m => m.Users)
                 .Returns(new List<ApplicationUser> { user }.AsQueryable().BuildMock());
+
+            _mapperMock.Setup(m => m.Map<UserProfileModel>(user)).Returns(expectedProfile);
 
             // Act
             var result = await _userService.GetUserProfileAsync(userId);
@@ -115,7 +143,7 @@ namespace WebApp1.Tests.ControllerTests
         }
 
         [Fact]
-        public async Task UpdateUserAsync_UserDoesNotExist_ReturnsFalse()
+        public async Task UpdateUserAsync_UserDoesNotExist_ThrowsNotFoundException()
         {
             // Arrange
             var userId = Guid.NewGuid();
@@ -124,22 +152,19 @@ namespace WebApp1.Tests.ControllerTests
                 UserName = "UpdatedUser",
                 Email = "updated@example.com",
                 PhoneNumber = "1234567890",
-                AddressDelivery = new UserAddress { AddressDelivery = "123 New St" }
+                AddressDelivery = new UserAddressDTO { AddressDelivery = "123 New St" }
             };
 
             _userManagerMock.Setup(m => m.Users)
                 .Returns(new List<ApplicationUser>().AsQueryable().BuildMock());
 
-            // Act
-            var result = await _userService.UpdateUserAsync(userId, updateModel);
-
-            // Assert
-            Assert.False(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<MyApplicationException>(() => _userService.UpdateUserAsync(userId, updateModel));
             _userManagerMock.Verify(m => m.UpdateAsync(It.IsAny<ApplicationUser>()), Times.Never);
         }
 
         [Fact]
-        public async Task UpdateUserAsync_InvalidEmail_ReturnsFalse()
+        public async Task UpdateUserAsync_InvalidEmail_ThrowsException()
         {
             // Arrange
             var userId = Guid.NewGuid();
@@ -158,16 +183,13 @@ namespace WebApp1.Tests.ControllerTests
                 UserName = "UpdatedUser",
                 Email = "invalid-email",
                 PhoneNumber = "1234567890",
-                AddressDelivery = new UserAddress { AddressDelivery = "123 New St" }
+                AddressDelivery = new UserAddressDTO { AddressDelivery = "123 New St" }
             };
 
             _userManagerMock.Setup(m => m.Users).Returns(_dbContext.Users);
 
-            // Act
-            var result = await _userService.UpdateUserAsync(userId, updateModel);
-
-            // Assert
-            Assert.False(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<NullReferenceException>(() => _userService.UpdateUserAsync(userId, updateModel));
             _userManagerMock.Verify(m => m.UpdateAsync(It.IsAny<ApplicationUser>()), Times.Never);
         }
 
@@ -195,18 +217,15 @@ namespace WebApp1.Tests.ControllerTests
         }
 
         [Fact]
-        public async Task GetUserProfileAsync_UserDoesNotExist_ReturnsNull()
+        public async Task GetUserProfileAsync_UserDoesNotExist_ThrowsException()
         {
             // Arrange
             var userId = Guid.NewGuid();
 
             _userManagerMock.Setup(m => m.Users).Returns(_dbContext.Users);
 
-            // Act
-            var result = await _userService.GetUserProfileAsync(userId);
-
-            // Assert
-            Assert.Null(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<MyApplicationException>(() => _userService.GetUserProfileAsync(userId));
         }
     }
 }

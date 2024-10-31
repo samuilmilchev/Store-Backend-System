@@ -2,7 +2,7 @@
 using DAL.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Shared;
+using Shared.Models;
 using WebApp1.Services;
 
 namespace WebApp1.Controllers.API
@@ -61,7 +61,6 @@ namespace WebApp1.Controllers.API
                 return BadRequest(new { Errors = errors });
             }
 
-            // Return the user ID and token in the response
             var encodedToken = System.Web.HttpUtility.UrlEncode(token);
             return Created("", new { userId, encodedToken });
         }

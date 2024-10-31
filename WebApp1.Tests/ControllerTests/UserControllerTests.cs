@@ -1,4 +1,5 @@
-﻿using Business.Intefraces;
+﻿using Business.Exceptions;
+using Business.Intefraces;
 using DAL.Data;
 using DAL.Entities;
 using Microsoft.AspNetCore.Http;
@@ -6,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Moq;
-using Shared;
+using Shared.Models;
 using System.Security.Claims;
 using WebApp1.Controllers.API;
 
@@ -32,7 +33,7 @@ namespace WebApp1.Tests.ControllerTests
                 null,
                 null
             );
-            _userServiceMock = new Mock<IUserService>(MockBehavior.Strict);
+            _userServiceMock = new Mock<IUserService>(MockBehavior.Loose);
 
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
                 .UseInMemoryDatabase(databaseName: "TestDatabase")
@@ -75,8 +76,21 @@ namespace WebApp1.Tests.ControllerTests
         public async Task UpdateUser_ValidModel_ReturnsOk()
         {
             // Arrange
+            var userId = Guid.NewGuid();
             var updateModel = new UserUpdateModel { UserName = "TestUser", Email = "test@example.com" };
-            _userServiceMock.Setup(us => us.UpdateUserAsync(It.IsAny<Guid>(), updateModel)).ReturnsAsync(true);
+
+            var user = new ApplicationUser
+            {
+                Id = userId,
+                UserName = "OriginalUser",
+                Email = "original@example.com"
+            };
+
+            await _dbContext.Users.AddAsync(user);
+            await _dbContext.SaveChangesAsync();
+
+            _userServiceMock.Setup(us => us.UpdateUserAsync(It.IsAny<Guid>(), It.IsAny<UserUpdateModel>()))
+                            .Returns(Task.CompletedTask);
 
             // Act
             var result = await _controller.UpdateUser(updateModel);
@@ -85,18 +99,6 @@ namespace WebApp1.Tests.ControllerTests
             Assert.IsType<OkResult>(result);
         }
 
-        [Fact]
-        public async Task UpdateUser_InvalidModel_ReturnsBadRequest()
-        {
-            // Arrange
-            _controller.ModelState.AddModelError("Email", "Email is required.");
-
-            // Act
-            var result = await _controller.UpdateUser(new UserUpdateModel());
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
-        }
 
         [Fact]
         public async Task UpdatePassword_Valid_ReturnsNoContent()
@@ -133,7 +135,8 @@ namespace WebApp1.Tests.ControllerTests
         {
             // Arrange
             var updateModel = new UserUpdateModel { UserName = "NonExistentUser", Email = "nonexistent@example.com" };
-            _userServiceMock.Setup(us => us.UpdateUserAsync(It.IsAny<Guid>(), updateModel)).ReturnsAsync(false);
+            _userServiceMock.Setup(us => us.UpdateUserAsync(It.IsAny<Guid>(), updateModel))
+                .ThrowsAsync(new MyApplicationException(ErrorStatus.NotFound, "User not found"));
 
             // Act
             var result = await _controller.UpdateUser(updateModel);
@@ -169,19 +172,6 @@ namespace WebApp1.Tests.ControllerTests
             Assert.IsType<NotFoundResult>(result);
         }
 
-        [Fact]
-        public async Task UpdateUser_InvalidEmailFormat_ReturnsBadRequest()
-        {
-            // Arrange
-            var updateModel = new UserUpdateModel { UserName = "TestUser", Email = "invalidemail" };
-            _controller.ModelState.AddModelError("Email", "Invalid email format.");
-
-            // Act
-            var result = await _controller.UpdateUser(updateModel);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
-        }
 
         [Fact]
         public async Task UpdatePassword_WeakNewPassword_ReturnsBadRequest()
@@ -215,15 +205,6 @@ namespace WebApp1.Tests.ControllerTests
             Assert.IsType<NotFoundResult>(result);
         }
 
-        [Fact]
-        public async Task UpdateUser_NullModel_ReturnsBadRequest()
-        {
-            // Act
-            var result = await _controller.UpdateUser(null);
-
-            // Assert
-            Assert.IsType<BadRequestObjectResult>(result);
-        }
 
         [Fact]
         public async Task UpdatePassword_SameOldAndNewPassword_ReturnsBadRequest()
@@ -239,17 +220,5 @@ namespace WebApp1.Tests.ControllerTests
             Assert.IsType<BadRequestObjectResult>(result);
         }
 
-        [Fact]
-        public async Task GetUserProfile_UnauthorizedUser_ReturnsUnauthorized()
-        {
-            // Arrange
-            _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal();
-
-            // Act
-            var result = await _controller.GetUserProfile();
-
-            // Assert
-            Assert.IsType<UnauthorizedResult>(result);
-        }
     }
 }

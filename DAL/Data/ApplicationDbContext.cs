@@ -10,6 +10,7 @@ namespace DAL.Data
             : base(options)
         {
         }
+
         public DbSet<UserAddress> UserAddresses { get; set; }
     }
 }

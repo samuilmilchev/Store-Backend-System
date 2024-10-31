@@ -1,4 +1,4 @@
-﻿using Shared;
+﻿using Shared.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace WebApp1.Tests.ModelsTests

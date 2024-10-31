@@ -3,7 +3,7 @@ using DAL.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using Shared;
+using Shared.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -49,13 +49,11 @@ namespace Business.Services
 
         public async Task<(bool Success, string UserId, string Token, IEnumerable<string> Errors)> SignUpAsync(SignUpRequest request)
         {
-            // Check if the email format is valid
             if (!IsValidEmail(request.Email))
             {
                 return (false, null, null, new[] { "The email format is invalid." });
             }
 
-            // If user already exists
             var existingUser = await _userManager.FindByEmailAsync(request.Email);
             if (existingUser != null)
             {
@@ -67,7 +65,6 @@ namespace Business.Services
 
             if (result.Succeeded)
             {
-                // Ensure the "User" role exists before assigning it
                 if (!await _roleManager.RoleExistsAsync("User"))
                 {
                     var roleCreationResult = await _roleManager.CreateAsync(new ApplicationRole { Name = "User" });
@@ -77,21 +74,18 @@ namespace Business.Services
                     }
                 }
 
-                // Assign the "User" role to the newly created user
                 await _userManager.AddToRoleAsync(user, "User");
 
                 var claims = new List<Claim>
                     {
                         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                        new Claim(ClaimTypes.Name, user.UserName) // Optionally, you can add the username as a claim
+                        new Claim(ClaimTypes.Name, user.UserName)
                     };
                 await _userManager.AddClaimsAsync(user, claims);
 
-                // Generate email confirmation token
                 var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-                // Generate confirmation link
-                var confirmationLink = ""; // Set up the confirmation link here if needed
+                var confirmationLink = "";
 
                 try
                 {
@@ -123,18 +117,15 @@ namespace Business.Services
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            // Get the roles assigned to the user
             var roles = await _userManager.GetRolesAsync(user);
 
-            // Create claims, including roles
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), // Add user ID as a claim
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
             };
 
-            // Add role claims
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
             var token = new JwtSecurityToken(
@@ -148,7 +139,6 @@ namespace Business.Services
         }
         private bool IsValidEmail(string email)
         {
-            // Add your email validation logic here (e.g., using Regex)
             try
             {
                 var addr = new System.Net.Mail.MailAddress(email);

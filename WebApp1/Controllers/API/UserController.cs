@@ -1,10 +1,11 @@
-﻿using Business.Intefraces;
+﻿using Business.Exceptions;
+using Business.Intefraces;
 using DAL.Data;
 using DAL.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Shared;
+using Shared.Models;
 using System.Security.Claims;
 
 namespace WebApp1.Controllers.API
@@ -29,11 +30,6 @@ namespace WebApp1.Controllers.API
         [HttpPut]
         public async Task<IActionResult> UpdateUser([FromBody] UserUpdateModel updateModel)
         {
-            if (!ModelState.IsValid || updateModel == null)
-            {
-                return BadRequest(ModelState);
-            }
-
             var userIdClaim = User.Claims
            .FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier && Guid.TryParse(claim.Value, out _));
             if (userIdClaim == null)
@@ -43,13 +39,15 @@ namespace WebApp1.Controllers.API
 
             var userId = Guid.Parse(userIdClaim.Value);
 
-            var success = await _userService.UpdateUserAsync(userId, updateModel);
-            if (!success)
+            try
+            {
+                await _userService.UpdateUserAsync(userId, updateModel);
+                return Ok();
+            }
+            catch (MyApplicationException ex) when (ex.ErrorStatus == ErrorStatus.NotFound)
             {
                 return NotFound();
             }
-
-            return Ok();
         }
 
         [Authorize]
@@ -86,10 +84,6 @@ namespace WebApp1.Controllers.API
         {
             var userIdClaim = User.Claims
             .FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier && Guid.TryParse(claim.Value, out _));
-            if (userIdClaim == null)
-            {
-                return Unauthorized();
-            }
 
             var userId = Guid.Parse(userIdClaim.Value);
 

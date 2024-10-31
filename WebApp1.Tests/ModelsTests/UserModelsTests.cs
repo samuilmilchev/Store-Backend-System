@@ -1,5 +1,5 @@
-﻿using DAL.Entities;
-using Shared;
+﻿using Shared.DTOs;
+using Shared.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace WebApp1.Tests.ModelsTests
@@ -15,7 +15,7 @@ namespace WebApp1.Tests.ModelsTests
                 UserName = "ValidUser",
                 Email = "valid@example.com",
                 PhoneNumber = "1234567890",
-                AddressDelivery = new UserAddress { AddressDelivery = "123 New St" }
+                AddressDelivery = new UserAddressDTO { AddressDelivery = "123 New St" }
             };
 
             // Act
@@ -34,7 +34,7 @@ namespace WebApp1.Tests.ModelsTests
                 UserName = "ValidUser",
                 Email = "invalid-email",
                 PhoneNumber = "1234567890",
-                AddressDelivery = new UserAddress { AddressDelivery = "123 New St" }
+                AddressDelivery = new UserAddressDTO { AddressDelivery = "123 New St" }
             };
 
             // Act
@@ -54,7 +54,7 @@ namespace WebApp1.Tests.ModelsTests
                 UserName = "ValidUser",
                 Email = null,
                 PhoneNumber = "1234567890",
-                AddressDelivery = new UserAddress { AddressDelivery = "123 New St" }
+                AddressDelivery = new UserAddressDTO { AddressDelivery = "123 New St" }
             };
 
             // Act
@@ -74,7 +74,7 @@ namespace WebApp1.Tests.ModelsTests
                 UserName = "ValidUser",
                 Email = "",
                 PhoneNumber = "1234567890",
-                AddressDelivery = new UserAddress { AddressDelivery = "123 New St" }
+                AddressDelivery = new UserAddressDTO { AddressDelivery = "123 New St" }
             };
 
             // Act
@@ -94,7 +94,7 @@ namespace WebApp1.Tests.ModelsTests
                 UserName = "ValidUser",
                 Email = "valid@example.com",
                 PhoneNumber = "123",
-                AddressDelivery = new UserAddress { AddressDelivery = "123 New St" }
+                AddressDelivery = new UserAddressDTO { AddressDelivery = "123 New St" }
             };
 
             // Act

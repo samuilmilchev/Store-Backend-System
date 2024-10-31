@@ -1,7 +1,7 @@
-﻿using DAL.Entities;
+﻿using Shared.DTOs;
 using System.ComponentModel.DataAnnotations;
 
-namespace Shared
+namespace Shared.Models
 {
     public class UserUpdateModel
     {
@@ -13,6 +13,6 @@ namespace Shared
 
         [RegularExpression(@"^\d{10}$", ErrorMessage = "Phone number must be exactly 10 digits.")]
         public string PhoneNumber { get; set; }
-        public UserAddress? AddressDelivery { get; set; }
+        public UserAddressDTO? AddressDelivery { get; set; }
     }
 }

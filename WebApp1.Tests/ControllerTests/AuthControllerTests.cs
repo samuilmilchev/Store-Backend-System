@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.Configuration;
 using Moq;
-using Shared;
+using Shared.Models;
 using WebApp1.Controllers.API;
 using WebApp1.Services;
 
