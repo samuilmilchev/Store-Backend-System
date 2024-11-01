@@ -1,7 +1,7 @@
-﻿using Shared;
+﻿using Shared.Models;
 using System.ComponentModel.DataAnnotations;
 
-namespace WebApp1.Tests.ControllerTests
+namespace WebApp1.Tests.ModelsTests
 {
     public class LoginModelTests
     {

@@ -1,4 +1,5 @@
 using Business.Intefraces;
+using Business.Mappings;
 using Business.Services;
 using DAL.Data;
 using DAL.Entities;
@@ -24,28 +25,26 @@ namespace WebApp1
             var builder = WebApplication.CreateBuilder(args);
 
             Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(builder.Configuration) // Load from appsettings.json or appsettings.Development.json
+                .ReadFrom.Configuration(builder.Configuration)
                 .CreateLogger();
 
             builder.Host.UseSerilog();
 
-            // Add services to the container
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString, b => b.MigrationsAssembly("DAL"))); // Specify your migrations assembly here
+                options.UseSqlServer(connectionString, b => b.MigrationsAssembly("DAL")));
 
-            // Add ASP.NET Core Identity
             builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
-                .AddDefaultTokenProviders();  // Token provider is required for password reset, email confirmation, etc.
+                .AddDefaultTokenProviders();
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IUserService, UserService>();
 
-            // Configure JWT Authentication
             var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]);
             builder.Services.AddAuthentication(options =>
             {
@@ -63,7 +62,7 @@ namespace WebApp1
                     ValidIssuer = builder.Configuration["Jwt:Issuer"],
                     ValidAudience = builder.Configuration["Jwt:Audience"],
                     IssuerSigningKey = new SymmetricSecurityKey(key),
-                    RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role" // Specify custom role claim type
+                    RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
                 };
             });
 
@@ -72,6 +71,7 @@ namespace WebApp1
             builder.Services.AddControllers();
 
             builder.Services.AddAutoMapper(typeof(Program));
+            builder.Services.AddAutoMapper(typeof(UserProfile));
 
             builder.Services.AddSwaggerGen(options =>
             {
@@ -101,7 +101,6 @@ namespace WebApp1
 
             app.UseRouting();
 
-            // Use this condition to set the appropriate error handling
             if (app.Environment.IsDevelopment())
             {
                 // Comment out this line to test your global handler
@@ -109,7 +108,7 @@ namespace WebApp1
             }
             else
             {
-                app.UseHsts(); // Use HSTS for production
+                app.UseHsts();
             }
 
             app.UseHttpsRedirection();
