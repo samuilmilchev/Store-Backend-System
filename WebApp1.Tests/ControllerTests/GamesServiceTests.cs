@@ -14,15 +14,15 @@ namespace WebApp1.Tests.ControllerTests
         public GamesServiceTests()
         {
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(databaseName: "GameServiceTestDB")
-                .Options;
+             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Use a unique database name
+             .Options;
 
             _context = new ApplicationDbContext(options);
             _gameService = new GameService(_context);
         }
 
         [Fact]
-        public async Task GetTopPlatformsAsync_ReturnsTopPlatforms()
+        public async Task GetTopPlatformsAsync_ReturnsTopPlatformsInDescendingOrder()
         {
             // Arrange
             var products = new List<Product>
@@ -31,7 +31,8 @@ namespace WebApp1.Tests.ControllerTests
                 new Product { Id = 2, Name = "Game2", Platform = Platforms.Windows, DateCreated = DateTime.UtcNow, TotalRating = 4.0, Price = 29.99M },
                 new Product { Id = 3, Name = "Game3", Platform = Platforms.Mac, DateCreated = DateTime.UtcNow, TotalRating = 3.5, Price = 39.99M },
                 new Product { Id = 4, Name = "Game4", Platform = Platforms.Mac, DateCreated = DateTime.UtcNow, TotalRating = 4.8, Price = 59.99M },
-                new Product { Id = 5, Name = "Game5", Platform = Platforms.Linux, DateCreated = DateTime.UtcNow, TotalRating = 3.0, Price = 49.99M }
+                new Product { Id = 5, Name = "Game5", Platform = Platforms.Linux, DateCreated = DateTime.UtcNow, TotalRating = 3.0, Price = 49.99M },
+                new Product { Id = 6, Name = "Game6", Platform = Platforms.Windows, DateCreated = DateTime.UtcNow, TotalRating = 5.0, Price = 25.00M }
             };
 
             await _context.Products.AddRangeAsync(products);
@@ -43,11 +44,11 @@ namespace WebApp1.Tests.ControllerTests
             // Assert
             Assert.Equal(3, result.Count);
             Assert.Equal(Platforms.Windows.ToString(), result[0].Platform);
-            Assert.Equal(2, result[0].ProductCount);
+            Assert.Equal(3, result[0].ProductCount); // Should be 4 for Windows
             Assert.Equal(Platforms.Mac.ToString(), result[1].Platform);
-            Assert.Equal(2, result[1].ProductCount);
+            Assert.Equal(2, result[1].ProductCount); // Should be 2 for Mac
             Assert.Equal(Platforms.Linux.ToString(), result[2].Platform);
-            Assert.Equal(1, result[2].ProductCount);
+            Assert.Equal(1, result[2].ProductCount); // Should be 1 for Linux
         }
 
         [Fact]
