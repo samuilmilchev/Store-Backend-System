@@ -3,6 +3,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace DAL.Migrations
 {
     /// <inheritdoc />
@@ -48,6 +50,23 @@ namespace DAL.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Products",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Platform = table.Column<int>(type: "int", nullable: false),
+                    DateCreated = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    TotalRating = table.Column<double>(type: "float", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -175,6 +194,23 @@ namespace DAL.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.InsertData(
+                table: "Products",
+                columns: new[] { "Id", "DateCreated", "Name", "Platform", "Price", "TotalRating" },
+                values: new object[,]
+                {
+                    { 1, new DateTime(2015, 5, 19, 0, 0, 0, 0, DateTimeKind.Unspecified), "The Witcher 3: Wild Hunt", 1, 39.99m, 9.6999999999999993 },
+                    { 2, new DateTime(2016, 2, 26, 0, 0, 0, 0, DateTimeKind.Unspecified), "Stardew Valley", 2, 14.99m, 9.5 },
+                    { 3, new DateTime(2012, 8, 21, 0, 0, 0, 0, DateTimeKind.Unspecified), "Counter-Strike: Global Offensive", 3, 14.99m, 9.0 },
+                    { 4, new DateTime(2017, 7, 25, 0, 0, 0, 0, DateTimeKind.Unspecified), "Fortnite", 1, 0.00m, 8.6999999999999993 },
+                    { 5, new DateTime(2020, 9, 17, 0, 0, 0, 0, DateTimeKind.Unspecified), "Hades", 2, 24.99m, 9.8000000000000007 },
+                    { 6, new DateTime(2018, 1, 25, 0, 0, 0, 0, DateTimeKind.Unspecified), "Celeste", 3, 19.99m, 9.5999999999999996 },
+                    { 7, new DateTime(2020, 3, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), "Animal Crossing: New Horizons", 4, 59.99m, 9.3000000000000007 },
+                    { 8, new DateTime(2019, 2, 4, 0, 0, 0, 0, DateTimeKind.Unspecified), "Apex Legends", 1, 0.00m, 8.5 },
+                    { 9, new DateTime(2011, 11, 18, 0, 0, 0, 0, DateTimeKind.Unspecified), "Minecraft", 2, 26.95m, 9.4000000000000004 },
+                    { 10, new DateTime(2020, 3, 20, 0, 0, 0, 0, DateTimeKind.Unspecified), "DOOM Eternal", 1, 59.99m, 9.1999999999999993 }
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -215,6 +251,26 @@ namespace DAL.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Products_DateCreated",
+                table: "Products",
+                column: "DateCreated");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_Name",
+                table: "Products",
+                column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_Platform",
+                table: "Products",
+                column: "Platform");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_TotalRating",
+                table: "Products",
+                column: "TotalRating");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_UserAddresses_UserId",
                 table: "UserAddresses",
                 column: "UserId",
@@ -238,6 +294,9 @@ namespace DAL.Migrations
 
             migrationBuilder.DropTable(
                 name: "AspNetUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "Products");
 
             migrationBuilder.DropTable(
                 name: "UserAddresses");
