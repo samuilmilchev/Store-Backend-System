@@ -24,17 +24,17 @@ namespace DAL.Data
             var context = new ApplicationDbContext(optionsBuilder.Options);
 
             // Apply pending migrations
-            ApplyPendingMigrations(context);
+            ApplyPendingMigrations(context).GetAwaiter().GetResult();
 
             return context;
         }
 
-        private void ApplyPendingMigrations(ApplicationDbContext context)
+        public static async Task ApplyPendingMigrations(ApplicationDbContext context)
         {
             // Apply pending migrations if there are any
             if (context.Database.GetPendingMigrations().Any())
             {
-                context.Database.Migrate();
+                await context.Database.MigrateAsync();
             }
         }
     }

@@ -123,6 +123,16 @@ namespace WebApp1
             app.MapRazorPages();
             app.MapControllers();
 
+            using (var scope = app.Services.CreateScope())
+            {
+                var scopedServices = scope.ServiceProvider;
+                var dbContext = scopedServices.GetRequiredService<ApplicationDbContext>();
+
+                ApplicationDbContextFactory.ApplyPendingMigrations(dbContext)
+                                           .GetAwaiter()
+                                           .GetResult();
+            }
+
             app.Run();
 
             Log.CloseAndFlush();
