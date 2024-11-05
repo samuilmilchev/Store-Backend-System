@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241101123903_Initial")]
-    partial class Initial
+    [Migration("20241105090202_Add_UserAddress")]
+    partial class Add_UserAddress
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -119,135 +119,6 @@ namespace DAL.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("DAL.Entities.Product", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DateCreated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("Platform")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<double>("TotalRating")
-                        .HasColumnType("float");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DateCreated");
-
-                    b.HasIndex("Name");
-
-                    b.HasIndex("Platform");
-
-                    b.HasIndex("TotalRating");
-
-                    b.ToTable("Products");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            DateCreated = new DateTime(2015, 5, 19, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "The Witcher 3: Wild Hunt",
-                            Platform = 1,
-                            Price = 39.99m,
-                            TotalRating = 9.6999999999999993
-                        },
-                        new
-                        {
-                            Id = 2,
-                            DateCreated = new DateTime(2016, 2, 26, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Stardew Valley",
-                            Platform = 2,
-                            Price = 14.99m,
-                            TotalRating = 9.5
-                        },
-                        new
-                        {
-                            Id = 3,
-                            DateCreated = new DateTime(2012, 8, 21, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Counter-Strike: Global Offensive",
-                            Platform = 3,
-                            Price = 14.99m,
-                            TotalRating = 9.0
-                        },
-                        new
-                        {
-                            Id = 4,
-                            DateCreated = new DateTime(2017, 7, 25, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Fortnite",
-                            Platform = 1,
-                            Price = 0.00m,
-                            TotalRating = 8.6999999999999993
-                        },
-                        new
-                        {
-                            Id = 5,
-                            DateCreated = new DateTime(2020, 9, 17, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Hades",
-                            Platform = 2,
-                            Price = 24.99m,
-                            TotalRating = 9.8000000000000007
-                        },
-                        new
-                        {
-                            Id = 6,
-                            DateCreated = new DateTime(2018, 1, 25, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Celeste",
-                            Platform = 3,
-                            Price = 19.99m,
-                            TotalRating = 9.5999999999999996
-                        },
-                        new
-                        {
-                            Id = 7,
-                            DateCreated = new DateTime(2020, 3, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Animal Crossing: New Horizons",
-                            Platform = 4,
-                            Price = 59.99m,
-                            TotalRating = 9.3000000000000007
-                        },
-                        new
-                        {
-                            Id = 8,
-                            DateCreated = new DateTime(2019, 2, 4, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Apex Legends",
-                            Platform = 1,
-                            Price = 0.00m,
-                            TotalRating = 8.5
-                        },
-                        new
-                        {
-                            Id = 9,
-                            DateCreated = new DateTime(2011, 11, 18, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Minecraft",
-                            Platform = 2,
-                            Price = 26.95m,
-                            TotalRating = 9.4000000000000004
-                        },
-                        new
-                        {
-                            Id = 10,
-                            DateCreated = new DateTime(2020, 3, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "DOOM Eternal",
-                            Platform = 1,
-                            Price = 59.99m,
-                            TotalRating = 9.1999999999999993
-                        });
-                });
-
             modelBuilder.Entity("DAL.Entities.UserAddress", b =>
                 {
                     b.Property<Guid>("Id")
@@ -263,8 +134,7 @@ namespace DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("UserAddresses");
                 });
@@ -375,8 +245,8 @@ namespace DAL.Migrations
             modelBuilder.Entity("DAL.Entities.UserAddress", b =>
                 {
                     b.HasOne("DAL.Entities.ApplicationUser", "User")
-                        .WithOne("AddressDelivery")
-                        .HasForeignKey("DAL.Entities.UserAddress", "UserId")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -432,11 +302,6 @@ namespace DAL.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("DAL.Entities.ApplicationUser", b =>
-                {
-                    b.Navigation("AddressDelivery");
                 });
 #pragma warning restore 612, 618
         }

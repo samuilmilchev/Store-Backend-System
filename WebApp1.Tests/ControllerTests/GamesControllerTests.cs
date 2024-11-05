@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Shared.DTOs;
 using WebApp1.Controllers.API;
+using WebApp1.Models;
 
 namespace WebApp1.Tests.ControllerTests
 {
@@ -43,13 +44,20 @@ namespace WebApp1.Tests.ControllerTests
         public async Task SearchGames_ReturnsEmptyList_WhenNoGamesFound()
         {
             // Arrange
-            var searchTerm = "NonExistentGame";
+            var searchModel = new GameSearchModel
+            {
+                Term = "NonExistentGame",
+                Limit = 10,
+                Offset = 0
+            };
             var games = new List<SearchResultDto>();
 
-            _mockGameService.Setup(s => s.SearchGamesAsync(searchTerm, 10, 0)).ReturnsAsync(games);
+            _mockGameService.Setup(s => s.SearchGamesAsync(searchModel.Term, searchModel.Limit, searchModel.Offset)).ReturnsAsync(games);
+
+
 
             // Act
-            var result = await _controller.SearchGames(searchTerm, 10, 0);
+            var result = await _controller.SearchGames(searchModel);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
@@ -57,22 +65,27 @@ namespace WebApp1.Tests.ControllerTests
             Assert.Empty(okResult.Value as List<SearchResultDto>);
         }
 
-
         [Fact]
         public async Task SearchGames_ReturnsOkResult_WithMatchingGames()
         {
             // Arrange
-            var searchTerm = "Game";
+            var searchModel = new GameSearchModel
+            {
+                Term = "Game",
+                Limit = 10,
+                Offset = 0
+            };
+
             var games = new List<SearchResultDto>
             {
                 new SearchResultDto { Id = 1, Name = "Game1", Platform = "Platform1", DateCreated = DateTime.UtcNow, TotalRating = 4.5, Price = 19.99M },
                 new SearchResultDto { Id = 2, Name = "Game2", Platform = "Platform2", DateCreated = DateTime.UtcNow, TotalRating = 4.0, Price = 29.99M }
             };
 
-            _mockGameService.Setup(s => s.SearchGamesAsync(searchTerm, 10, 0)).ReturnsAsync(games);
+            _mockGameService.Setup(s => s.SearchGamesAsync(searchModel.Term, searchModel.Limit, searchModel.Offset)).ReturnsAsync(games);
 
             // Act
-            var result = await _controller.SearchGames(searchTerm, 10, 0);
+            var result = await _controller.SearchGames(searchModel);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
@@ -84,15 +97,20 @@ namespace WebApp1.Tests.ControllerTests
         public async Task SearchGames_ReturnsNull_WhenTermIsInvalid()
         {
             // Arrange
-            string invalidTerm = null;
+            var searchModel = new GameSearchModel
+            {
+                Term = null,
+                Limit = 10,
+                Offset = 0
+            };
+            GameSearchModel gameSearchModel = new GameSearchModel();
 
             // Act
-            var result = await _controller.SearchGames(invalidTerm, 10, 0);
+            var result = await _controller.SearchGames(searchModel);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Null(okResult.Value);
         }
-
     }
 }

@@ -7,6 +7,7 @@
         Linux = 3,
         Mobile = 4
     }
+
     public class Product
     {
         public int Id { get; set; }
@@ -15,6 +16,5 @@
         public DateTime DateCreated { get; set; }
         public double TotalRating { get; set; }
         public decimal Price { get; set; }
-
     }
 }

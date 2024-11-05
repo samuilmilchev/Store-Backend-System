@@ -1,5 +1,6 @@
 ﻿using Business.Intefraces;
 using Microsoft.AspNetCore.Mvc;
+using WebApp1.Models;
 
 namespace WebApp1.Controllers.API
 {
@@ -37,9 +38,9 @@ namespace WebApp1.Controllers.API
         /// <response code="200">Returns a list of games matching the search term.</response>
         /// <response code="400">Bad request if the search term is invalid.</response>
         [HttpGet("search")]
-        public async Task<IActionResult> SearchGames([FromQuery] string term, [FromQuery] int limit = 10, [FromQuery] int offset = 0)
+        public async Task<IActionResult> SearchGames([FromQuery] GameSearchModel searchModel)
         {
-            var searchResults = await _gameService.SearchGamesAsync(term, limit, offset);
+            var searchResults = await _gameService.SearchGamesAsync(searchModel.Term, searchModel.Limit, searchModel.Offset);
 
             return Ok(searchResults);
         }

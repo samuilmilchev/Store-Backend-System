@@ -3,6 +3,8 @@ using Business.Mappings;
 using Business.Services;
 using DAL.Data;
 using DAL.Entities;
+using DAL.Repository;
+using DAL.Repository.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -19,7 +21,7 @@ namespace WebApp1
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +42,9 @@ namespace WebApp1
                 .AddDefaultTokenProviders();
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+            builder.Services.AddScoped<IGameRepository, GameRepository>();
+
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IUserService, UserService>();
@@ -72,6 +77,7 @@ namespace WebApp1
 
             builder.Services.AddAutoMapper(typeof(Program));
             builder.Services.AddAutoMapper(typeof(UserProfile));
+            builder.Services.AddAutoMapper(typeof(ProductProfile));
 
             builder.Services.AddSwaggerDocumentation();
 
@@ -126,11 +132,14 @@ namespace WebApp1
             using (var scope = app.Services.CreateScope())
             {
                 var scopedServices = scope.ServiceProvider;
-                var dbContext = scopedServices.GetRequiredService<ApplicationDbContext>();
 
+                var dbContext = scopedServices.GetRequiredService<ApplicationDbContext>();
                 ApplicationDbContextFactory.ApplyPendingMigrations(dbContext)
                                            .GetAwaiter()
                                            .GetResult();
+
+                await SeedRoles.Initialize(scopedServices);
+                await SeedRoles.InitializeProducts(scopedServices);
             }
 
             app.Run();

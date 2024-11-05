@@ -13,11 +13,11 @@ namespace WebApp1.Services
         public async Task SendEmailConfirmation(string userEmail, string confirmationLink)
         {
             var email = _configuration["EmailSettings:Email"];
-            var password = _configuration["EmailSettings:AppPassword"]; // Use the App Password here
+            var password = _configuration["EmailSettings:AppPassword"];
 
-            using (var client = new SmtpClient("smtp.gmail.com", 587)) // Port 587 for TLS
+            using (var client = new SmtpClient("smtp.gmail.com", 587))
             {
-                client.EnableSsl = true; // Ensure SSL is enabled
+                client.EnableSsl = true;
                 client.Credentials = new System.Net.NetworkCredential(email, password);
 
                 var mailMessage = new MailMessage

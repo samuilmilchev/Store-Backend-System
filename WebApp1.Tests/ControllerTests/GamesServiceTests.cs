@@ -1,8 +1,13 @@
-﻿using Business.Exceptions;
+﻿using AutoMapper;
 using Business.Services;
 using DAL.Data;
 using DAL.Entities;
+using DAL.Repository;
 using Microsoft.EntityFrameworkCore;
+using Moq;
+using Shared.DTOs;
+using System.ComponentModel.DataAnnotations;
+using WebApp1.Models;
 
 namespace WebApp1.Tests.ControllerTests
 {
@@ -10,15 +15,34 @@ namespace WebApp1.Tests.ControllerTests
     {
         private readonly ApplicationDbContext _context;
         private readonly GameService _gameService;
+        private readonly IMapper _mapper;
+        private readonly GameRepository _gameRepository;
 
         public GamesServiceTests()
         {
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()) // Use a unique database name
-             .Options;
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
 
             _context = new ApplicationDbContext(options);
-            _gameService = new GameService(_context);
+
+            var mockMapper = new Mock<IMapper>();
+            mockMapper.Setup(m => m.Map<List<SearchResultDto>>(It.IsAny<List<Product>>()))
+                .Returns((List<Product> products) => products.Select(p => new SearchResultDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Platform = p.Platform.ToString(),
+                    DateCreated = p.DateCreated,
+                    TotalRating = p.TotalRating,
+                    Price = p.Price
+                }).ToList());
+            _mapper = mockMapper.Object;
+
+
+            _gameRepository = new GameRepository(_context, _mapper);
+
+            _gameService = new GameService(_gameRepository, _mapper);
         }
 
         [Fact]
@@ -83,44 +107,42 @@ namespace WebApp1.Tests.ControllerTests
         }
 
         [Fact]
-        public async Task SearchGamesAsync_ThrowsException_WhenTermIsEmpty()
+        public async Task SearchGamesAsync_ThrowsValidationException_WhenTermIsEmpty()
         {
             // Arrange
-            string emptyTerm = null;
+            var emptySearchModel = new GameSearchModel { Term = null, Limit = 10, Offset = 0 };
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(
-                () => _gameService.SearchGamesAsync(emptyTerm, 10, 0)
-            );
-            Assert.Equal("Invalid search term.", exception.Message);
+            var validationContext = new ValidationContext(emptySearchModel);
+            var exception = Assert.Throws<ValidationException>(() => Validator.ValidateObject(emptySearchModel, validationContext, validateAllProperties: true));
+
+            Assert.Equal("Search term is required.", exception.Message);
         }
 
         [Fact]
-        public async Task SearchGamesAsync_ThrowsException_WhenLimitIsNegative()
+        public async Task SearchGamesAsync_ThrowsValidationException_WhenLimitIsNegative()
         {
             // Arrange
-            string validTerm = "Game";
-            int negativeLimit = -1;
+            var invalidLimitSearchModel = new GameSearchModel { Term = "Game", Limit = -1, Offset = 0 };
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(
-                () => _gameService.SearchGamesAsync(validTerm, negativeLimit, 0)
-            );
-            Assert.Equal("Invalid search term.", exception.Message);
+            var validationContext = new ValidationContext(invalidLimitSearchModel);
+            var exception = Assert.Throws<ValidationException>(() => Validator.ValidateObject(invalidLimitSearchModel, validationContext, validateAllProperties: true));
+
+            Assert.Equal("Limit must be a non-negative value.", exception.Message);
         }
 
         [Fact]
-        public async Task SearchGamesAsync_ThrowsException_WhenOffsetIsNegative()
+        public async Task SearchGamesAsync_ThrowsValidationException_WhenOffsetIsNegative()
         {
             // Arrange
-            string validTerm = "Game";
-            int negativeOffset = -1;
+            var invalidOffsetSearchModel = new GameSearchModel { Term = "Game", Limit = 10, Offset = -1 };
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(
-                () => _gameService.SearchGamesAsync(validTerm, 10, negativeOffset)
-            );
-            Assert.Equal("Invalid search term.", exception.Message);
+            var validationContext = new ValidationContext(invalidOffsetSearchModel);
+            var exception = Assert.Throws<ValidationException>(() => Validator.ValidateObject(invalidOffsetSearchModel, validationContext, validateAllProperties: true));
+
+            Assert.Equal("Offset must be a non-negative value.", exception.Message);
         }
     }
 }
