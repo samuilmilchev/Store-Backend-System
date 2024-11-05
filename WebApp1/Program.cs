@@ -3,12 +3,13 @@ using Business.Mappings;
 using Business.Services;
 using DAL.Data;
 using DAL.Entities;
+using DAL.Repository;
+using DAL.Repository.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using Serilog;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
@@ -20,7 +21,7 @@ namespace WebApp1
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -41,9 +42,13 @@ namespace WebApp1
                 .AddDefaultTokenProviders();
 
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+            builder.Services.AddScoped<IGameRepository, GameRepository>();
+
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IGameService, GameService>();
 
             var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]);
             builder.Services.AddAuthentication(options =>
@@ -72,11 +77,9 @@ namespace WebApp1
 
             builder.Services.AddAutoMapper(typeof(Program));
             builder.Services.AddAutoMapper(typeof(UserProfile));
+            builder.Services.AddAutoMapper(typeof(ProductProfile));
 
-            builder.Services.AddSwaggerGen(options =>
-            {
-                options.SwaggerDoc("v1", new OpenApiInfo { Title = "Virtual Wallet API V1", Version = "v1" });
-            });
+            builder.Services.AddSwaggerDocumentation();
 
 
             //        builder.Services.AddHealthChecks()
@@ -125,6 +128,19 @@ namespace WebApp1
             app.MapHealthChecks("/hc");
             app.MapRazorPages();
             app.MapControllers();
+
+            using (var scope = app.Services.CreateScope())
+            {
+                var scopedServices = scope.ServiceProvider;
+
+                var dbContext = scopedServices.GetRequiredService<ApplicationDbContext>();
+                ApplicationDbContextFactory.ApplyPendingMigrations(dbContext)
+                                           .GetAwaiter()
+                                           .GetResult();
+
+                await SeedRoles.Initialize(scopedServices);
+                await SeedRoles.InitializeProducts(scopedServices);
+            }
 
             app.Run();
 

@@ -26,6 +26,13 @@ namespace WebApp1.Controllers.API
             _userService = userService;
         }
 
+        /// <summary>
+        /// Updates user information.
+        /// </summary>
+        /// <param name="updateModel">User update model containing the new user information.</param>
+        /// <returns>Returns a status of 200 OK if the update was successful.</returns>
+        /// <response code="200">User information was updated successfully.</response>
+        /// <response code="401">Unauthorized if the user is not logged in.</response>
         [Authorize]
         [HttpPut]
         public async Task<IActionResult> UpdateUser([FromBody] UserUpdateModel updateModel)
@@ -39,6 +46,14 @@ namespace WebApp1.Controllers.API
             return Ok();
         }
 
+        /// <summary>
+        /// Updates the user's password.
+        /// </summary>
+        /// <param name="passwordUpdateModel">Model containing the old and new password.</param>
+        /// <returns>Returns a status of 204 No Content if the password was updated successfully.</returns>
+        /// <response code="204">Password updated successfully.</response>
+        /// <response code="400">Bad request if the old password is incorrect or new password is invalid.</response>
+        /// <response code="401">Unauthorized if the user is not logged in.</response>
         [Authorize]
         [HttpPatch("password")]
         public async Task<IActionResult> UpdatePassword([FromBody] PasswordUpdateModel passwordUpdateModel)
@@ -57,6 +72,12 @@ namespace WebApp1.Controllers.API
             return NoContent();
         }
 
+        /// <summary>
+        /// Retrieves the profile information for the logged-in user.
+        /// </summary>
+        /// <returns>Returns the user's profile information.</returns>
+        /// <response code="200">Returns the user profile data.</response>
+        /// <response code="401">Unauthorized if the user is not logged in.</response>
         [Authorize]
         [HttpGet("profile")]
         public async Task<IActionResult> GetUserProfile()

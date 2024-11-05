@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DAL.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20241028143558_Initial")]
-    partial class Initial
+    [Migration("20241105090202_Add_UserAddress")]
+    partial class Add_UserAddress
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -134,8 +134,7 @@ namespace DAL.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("UserAddresses");
                 });
@@ -246,8 +245,8 @@ namespace DAL.Migrations
             modelBuilder.Entity("DAL.Entities.UserAddress", b =>
                 {
                     b.HasOne("DAL.Entities.ApplicationUser", "User")
-                        .WithOne("AddressDelivery")
-                        .HasForeignKey("DAL.Entities.UserAddress", "UserId")
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -303,11 +302,6 @@ namespace DAL.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("DAL.Entities.ApplicationUser", b =>
-                {
-                    b.Navigation("AddressDelivery");
                 });
 #pragma warning restore 612, 618
         }

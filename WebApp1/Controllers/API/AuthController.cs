@@ -28,6 +28,13 @@ namespace WebApp1.Controllers.API
             _authService = authService;
         }
 
+        /// <summary>
+        /// Authenticates a user and returns a JWT token.
+        /// </summary>
+        /// <param name="model">Login model containing user credentials.</param>
+        /// <returns>Returns a JWT token if the sign-in is successful.</returns>
+        /// <response code="200">Returns the JWT token.</response>
+        /// <response code="401">Unauthorized if the credentials are invalid.</response>
         [HttpPost("signIn")]
         public async Task<IActionResult> SignIn([FromBody] LoginModel model)
         {
@@ -42,6 +49,13 @@ namespace WebApp1.Controllers.API
             }
         }
 
+        /// <summary>
+        /// Registers a new user and returns user ID and a token.
+        /// </summary>
+        /// <param name="request">Sign-up request model containing user details.</param>
+        /// <returns>Returns the user ID and encoded JWT token if sign-up is successful.</returns>
+        /// <response code="201">Returns the user ID and encoded token.</response>
+        /// <response code="400">Bad request if sign-up fails due to invalid data.</response>
         [HttpPost("signUp")]
         public async Task<IActionResult> SignUp([FromBody] SignUpRequest request)
         {
@@ -59,6 +73,14 @@ namespace WebApp1.Controllers.API
             return Created("", new { userId, encodedToken });
         }
 
+        /// <summary>
+        /// Confirms a user's email address using a token.
+        /// </summary>
+        /// <param name="userId">The ID of the user whose email is to be confirmed.</param>
+        /// <param name="token">The confirmation token sent to the user's email.</param>
+        /// <returns>No content if the email confirmation is successful.</returns>
+        /// <response code="204">No content if the email confirmation is successful.</response>
+        /// <response code="400">Bad request if the confirmation fails.</response>
         [HttpGet("confirmEmail")]
         public async Task<IActionResult> ConfirmEmail(string userId, string token)
         {
