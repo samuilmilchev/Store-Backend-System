@@ -10,6 +10,7 @@ namespace Business.Services
         private readonly IGameRepository _gameRepository;
         private readonly IMapper _mapper;
         private readonly IImagesService _imagesService;
+
         public GameService(IGameRepository gameRepository, IMapper mapper, IImagesService imagesService)
         {
             _gameRepository = gameRepository;
@@ -34,7 +35,7 @@ namespace Business.Services
             return await _gameRepository.SearchGameByIdAsync(id);
         }
 
-        public async Task<SearchResultDto> CreateProduct(CreateProductDto productData)
+        public async Task<SearchResultDto> CreateGame(CreateProductDto productData)
         {
             if (productData.Logo != null || productData.Background != null)
             {
@@ -45,10 +46,10 @@ namespace Business.Services
                 productData.BackgroundUrl = background.Url.ToString();
             }
 
-            return await _gameRepository.CreateProduct(productData);
+            return await _gameRepository.CreateGame(productData);
         }
 
-        public async Task<SearchResultDto> UpdateProduct(int id, UpdateProductDto productData)
+        public async Task<SearchResultDto> UpdateGame(int id, UpdateProductDto productData)
         {
             if (productData.Logo != null)
             {
@@ -64,12 +65,12 @@ namespace Business.Services
                 productData.BackgroundUrl = background.Url.ToString();
             }
 
-            return await _gameRepository.UpdateProduct(id, productData);
+            return await _gameRepository.UpdateGame(id, productData);
         }
 
-        public async Task<bool> DeleteProduct(int id)
+        public async Task<bool> DeleteGame(int id)
         {
-            return await _gameRepository.DeleteProduct(id);
+            return await _gameRepository.DeleteGame(id);
         }
     }
 }

@@ -77,7 +77,7 @@ namespace DAL.Repository
             return _mapper.Map<SearchResultDto>(product);
         }
 
-        public async Task<SearchResultDto> CreateProduct(CreateProductDto productData)
+        public async Task<SearchResultDto> CreateGame(CreateProductDto productData)
         {
             var product = _mapper.Map<Product>(productData);
 
@@ -90,7 +90,7 @@ namespace DAL.Repository
             return _mapper.Map<SearchResultDto>(product);
         }
 
-        public async Task<SearchResultDto> UpdateProduct(int id, UpdateProductDto productData)
+        public async Task<SearchResultDto> UpdateGame(int id, UpdateProductDto productData)
         {
             var product = await _context.Products
                .Where(p => !p.IsDeleted)
@@ -119,7 +119,7 @@ namespace DAL.Repository
             return _mapper.Map<SearchResultDto>(product);
         }
 
-        public async Task<bool> DeleteProduct(int id)
+        public async Task<bool> DeleteGame(int id)
         {
             var product = await _context.Products
                 .Where(x => !x.IsDeleted)

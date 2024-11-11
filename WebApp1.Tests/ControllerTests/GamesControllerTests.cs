@@ -156,10 +156,10 @@ namespace WebApp1.Tests.ControllerTests
             var productData = new CreateProductDto { Name = "New Product", Price = 29.99M };
             var createdProduct = new SearchResultDto { Id = 1, Name = productData.Name, Price = productData.Price };
 
-            _mockGameService.Setup(s => s.CreateProduct(productData)).ReturnsAsync(createdProduct);
+            _mockGameService.Setup(s => s.CreateGame(productData)).ReturnsAsync(createdProduct);
 
             // Act
-            var result = await _controller.CreateProduct(productData);
+            var result = await _controller.CreateGame(productData);
 
             // Assert
             var createdAtResult = Assert.IsType<CreatedAtActionResult>(result);
@@ -177,10 +177,10 @@ namespace WebApp1.Tests.ControllerTests
             var updatedData = new UpdateProductDto { Name = "Updated Product", Price = 39.99M };
             var updatedProduct = new SearchResultDto { Id = productId, Name = updatedData.Name, Price = (decimal)updatedData.Price };
 
-            _mockGameService.Setup(s => s.UpdateProduct(productId, updatedData)).ReturnsAsync(updatedProduct);
+            _mockGameService.Setup(s => s.UpdateGame(productId, updatedData)).ReturnsAsync(updatedProduct);
 
             // Act
-            var result = await _controller.UpdateProduct(productId, updatedData);
+            var result = await _controller.UpdateGame(productId, updatedData);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
@@ -196,11 +196,11 @@ namespace WebApp1.Tests.ControllerTests
             var updatedData = new UpdateProductDto { Name = "Nonexistent Product", Price = 49.99M };
 
             _mockGameService
-                .Setup(s => s.UpdateProduct(productId, updatedData))
+                .Setup(s => s.UpdateGame(productId, updatedData))
                 .ThrowsAsync(new MyApplicationException(ErrorStatus.NotFound, "Product not found"));
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _controller.UpdateProduct(productId, updatedData));
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _controller.UpdateGame(productId, updatedData));
 
             Assert.Equal(ErrorStatus.NotFound, exception.ErrorStatus);
             Assert.Equal("Product not found", exception.Message);
@@ -212,10 +212,10 @@ namespace WebApp1.Tests.ControllerTests
             // Arrange
             var productId = 1;
 
-            _mockGameService.Setup(s => s.DeleteProduct(productId)).ReturnsAsync(true);
+            _mockGameService.Setup(s => s.DeleteGame(productId)).ReturnsAsync(true);
 
             // Act
-            var result = await _controller.DeleteProduct(productId);
+            var result = await _controller.DeleteGame(productId);
 
             // Assert
             Assert.IsType<NoContentResult>(result);
@@ -228,11 +228,11 @@ namespace WebApp1.Tests.ControllerTests
             var productId = 999;
 
             _mockGameService
-                .Setup(s => s.DeleteProduct(productId))
+                .Setup(s => s.DeleteGame(productId))
                 .ThrowsAsync(new MyApplicationException(ErrorStatus.NotFound, "Product not found"));
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _controller.DeleteProduct(productId));
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _controller.DeleteGame(productId));
 
             Assert.Equal(ErrorStatus.NotFound, exception.ErrorStatus);
             Assert.Equal("Product not found", exception.Message);

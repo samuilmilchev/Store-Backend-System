@@ -190,7 +190,7 @@ namespace WebApp1.Tests.Repository_Tests
             };
 
             // Act
-            await _gameRepository.CreateProduct(newProduct);
+            await _gameRepository.CreateGame(newProduct);
 
             // Assert
             using (var context = new ApplicationDbContext(_options))
@@ -216,7 +216,7 @@ namespace WebApp1.Tests.Repository_Tests
             };
 
             // Act
-            await _gameRepository.UpdateProduct(productId, updatedProduct);
+            await _gameRepository.UpdateGame(productId, updatedProduct);
 
             // Assert
             using (var context = new ApplicationDbContext(_options))
@@ -242,7 +242,7 @@ namespace WebApp1.Tests.Repository_Tests
             };
 
             // Act
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.UpdateProduct(productId, updatedProduct));
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.UpdateGame(productId, updatedProduct));
 
             // Assert
             Assert.Equal($"Product with id {productId} does not exist.", exception.Message);
@@ -255,7 +255,7 @@ namespace WebApp1.Tests.Repository_Tests
             var productId = 1;
 
             // Act
-            await _gameRepository.DeleteProduct(productId);
+            await _gameRepository.DeleteGame(productId);
 
             // Assert
             using (var context = new ApplicationDbContext(_options))
@@ -273,7 +273,7 @@ namespace WebApp1.Tests.Repository_Tests
             var productId = 5;
 
             // Act
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.DeleteProduct(productId));
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.DeleteGame(productId));
 
             // Assert
             Assert.Equal($"Product with id {productId} was not found.", exception.Message);

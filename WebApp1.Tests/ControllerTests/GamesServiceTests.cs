@@ -259,10 +259,10 @@ namespace WebApp1.Tests.ControllerTests
             _mockImagesService.Setup(service => service.UploadImageAsync(createProductDto.Logo)).ReturnsAsync(logoImage);
             _mockImagesService.Setup(service => service.UploadImageAsync(createProductDto.Background)).ReturnsAsync(backgroundImage);
 
-            _mockGameRepository.Setup(repo => repo.CreateProduct(createProductDto)).ReturnsAsync(expectedProduct);
+            _mockGameRepository.Setup(repo => repo.CreateGame(createProductDto)).ReturnsAsync(expectedProduct);
 
             // Act
-            var result = await _gameService.CreateProduct(createProductDto);
+            var result = await _gameService.CreateGame(createProductDto);
 
             // Assert
             Assert.NotNull(result);
@@ -284,10 +284,10 @@ namespace WebApp1.Tests.ControllerTests
                 Background = null
             };
 
-            _mockGameRepository.Setup(repo => repo.CreateProduct(createProductDto)).ReturnsAsync(expectedProduct);
+            _mockGameRepository.Setup(repo => repo.CreateGame(createProductDto)).ReturnsAsync(expectedProduct);
 
             // Act
-            var result = await _gameService.CreateProduct(createProductDto);
+            var result = await _gameService.CreateGame(createProductDto);
 
             // Assert
             Assert.NotNull(result);
@@ -317,10 +317,10 @@ namespace WebApp1.Tests.ControllerTests
             _mockImagesService.Setup(service => service.UploadImageAsync(updateProductDto.Logo)).ReturnsAsync(logoImage);
             _mockImagesService.Setup(service => service.UploadImageAsync(updateProductDto.Background)).ReturnsAsync(backgroundImage);
 
-            _mockGameRepository.Setup(repo => repo.UpdateProduct(productId, updateProductDto)).ReturnsAsync(expectedProduct);
+            _mockGameRepository.Setup(repo => repo.UpdateGame(productId, updateProductDto)).ReturnsAsync(expectedProduct);
 
             // Act
-            var result = await _gameService.UpdateProduct(productId, updateProductDto);
+            var result = await _gameService.UpdateGame(productId, updateProductDto);
 
             // Assert
             Assert.NotNull(result);
@@ -344,10 +344,10 @@ namespace WebApp1.Tests.ControllerTests
                 Background = null
             };
 
-            _mockGameRepository.Setup(repo => repo.UpdateProduct(productId, updateProductDto)).ReturnsAsync(expectedProduct);
+            _mockGameRepository.Setup(repo => repo.UpdateGame(productId, updateProductDto)).ReturnsAsync(expectedProduct);
 
             // Act
-            var result = await _gameService.UpdateProduct(productId, updateProductDto);
+            var result = await _gameService.UpdateGame(productId, updateProductDto);
 
             // Assert
             Assert.NotNull(result);
@@ -361,10 +361,10 @@ namespace WebApp1.Tests.ControllerTests
         {
             // Arrange
             var productId = 1;
-            _mockGameRepository.Setup(repo => repo.DeleteProduct(productId)).ReturnsAsync(true);
+            _mockGameRepository.Setup(repo => repo.DeleteGame(productId)).ReturnsAsync(true);
 
             // Act
-            var result = await _gameService.DeleteProduct(productId);
+            var result = await _gameService.DeleteGame(productId);
 
             // Assert
             Assert.True(result);
@@ -375,11 +375,11 @@ namespace WebApp1.Tests.ControllerTests
         {
             // Arrange
             var productId = 999;
-            _mockGameRepository.Setup(repo => repo.DeleteProduct(productId))
+            _mockGameRepository.Setup(repo => repo.DeleteGame(productId))
                 .ThrowsAsync(new MyApplicationException(ErrorStatus.NotFound, "Product not found"));
 
             // Act & Assert
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameService.DeleteProduct(productId));
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameService.DeleteGame(productId));
             Assert.Equal(ErrorStatus.NotFound, exception.ErrorStatus);
         }
     }

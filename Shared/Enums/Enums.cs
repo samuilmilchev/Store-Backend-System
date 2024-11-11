@@ -7,6 +7,7 @@
         Linux = 3,
         Mobile = 4
     }
+
     public enum Rating
     {
         Everyone = 1,
