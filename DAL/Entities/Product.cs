@@ -1,20 +1,7 @@
-﻿namespace DAL.Entities
-{
-    public enum Platforms
-    {
-        Windows = 1,
-        Mac = 2,
-        Linux = 3,
-        Mobile = 4
-    }
-    public enum Rating
-    {
-        Everyone = 1,
-        Teen = 2,
-        Mature = 3,
-        Adult = 4
-    }
+﻿using Shared.Enums;
 
+namespace DAL.Entities
+{
     public class Product
     {
         public int Id { get; set; }
@@ -28,5 +15,6 @@
         public string? Logo { get; set; }
         public string? Background { get; set; }
         public int Count { get; set; }
+        public bool IsDeleted { get; set; } = false;
     }
 }
