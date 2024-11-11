@@ -1,4 +1,5 @@
-﻿using Business.Intefraces;
+﻿using Business.Exceptions;
+using Business.Intefraces;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Shared.DTOs;
@@ -111,6 +112,130 @@ namespace WebApp1.Tests.ControllerTests
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
             Assert.Null(okResult.Value);
+        }
+
+        [Fact]
+        public async Task SearchGameById_ReturnsOkResult_WhenGameExists()
+        {
+            // Arrange
+            var gameId = 1;
+            var game = new SearchResultDto { Id = gameId, Name = "Test Game" };
+
+            _mockGameService.Setup(s => s.SearchGameByIdAsync(gameId)).ReturnsAsync(game);
+
+            // Act
+            var result = await _controller.SearchGameById(gameId);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(200, okResult.StatusCode);
+            Assert.Equal(game, okResult.Value);
+        }
+
+        [Fact]
+        public async Task SearchGameById_ThrowsMyApplicationException_ReturnsNotFound()
+        {
+            // Arrange
+            int nonExistentId = 999;
+            _mockGameService
+                .Setup(s => s.SearchGameByIdAsync(nonExistentId))
+                .ThrowsAsync(new MyApplicationException(ErrorStatus.NotFound, "Game not found"));
+
+            // Act
+            var result = await Assert.ThrowsAsync<MyApplicationException>(() => _controller.SearchGameById(nonExistentId));
+
+            // Assert
+            Assert.Equal(ErrorStatus.NotFound, result.ErrorStatus);
+            Assert.Equal("Game not found", result.Message);
+        }
+
+        [Fact]
+        public async Task CreateProduct_ReturnsCreatedAtActionResult_WithCreatedProduct()
+        {
+            // Arrange
+            var productData = new CreateProductDto { Name = "New Product", Price = 29.99M };
+            var createdProduct = new SearchResultDto { Id = 1, Name = productData.Name, Price = productData.Price };
+
+            _mockGameService.Setup(s => s.CreateGame(productData)).ReturnsAsync(createdProduct);
+
+            // Act
+            var result = await _controller.CreateGame(productData);
+
+            // Assert
+            var createdAtResult = Assert.IsType<CreatedAtActionResult>(result);
+            Assert.Equal(201, createdAtResult.StatusCode);
+            Assert.Equal(createdProduct, createdAtResult.Value);
+            Assert.Equal(nameof(_controller.SearchGameById), createdAtResult.ActionName);
+            Assert.Equal(createdProduct.Id, createdAtResult.RouteValues["id"]);
+        }
+
+        [Fact]
+        public async Task UpdateProduct_ReturnsOkResult_WithUpdatedProduct()
+        {
+            // Arrange
+            var productId = 1;
+            var updatedData = new UpdateProductDto { Name = "Updated Product", Price = 39.99M };
+            var updatedProduct = new SearchResultDto { Id = productId, Name = updatedData.Name, Price = (decimal)updatedData.Price };
+
+            _mockGameService.Setup(s => s.UpdateGame(productId, updatedData)).ReturnsAsync(updatedProduct);
+
+            // Act
+            var result = await _controller.UpdateGame(productId, updatedData);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(200, okResult.StatusCode);
+            Assert.Equal(updatedProduct, okResult.Value);
+        }
+
+        [Fact]
+        public async Task UpdateProduct_ThrowsMyApplicationException_WhenProductDoesNotExist()
+        {
+            // Arrange
+            var productId = 999;
+            var updatedData = new UpdateProductDto { Name = "Nonexistent Product", Price = 49.99M };
+
+            _mockGameService
+                .Setup(s => s.UpdateGame(productId, updatedData))
+                .ThrowsAsync(new MyApplicationException(ErrorStatus.NotFound, "Product not found"));
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _controller.UpdateGame(productId, updatedData));
+
+            Assert.Equal(ErrorStatus.NotFound, exception.ErrorStatus);
+            Assert.Equal("Product not found", exception.Message);
+        }
+
+        [Fact]
+        public async Task DeleteProduct_ReturnsNoContent_WhenProductDeletedSuccessfully()
+        {
+            // Arrange
+            var productId = 1;
+
+            _mockGameService.Setup(s => s.DeleteGame(productId)).ReturnsAsync(true);
+
+            // Act
+            var result = await _controller.DeleteGame(productId);
+
+            // Assert
+            Assert.IsType<NoContentResult>(result);
+        }
+
+        [Fact]
+        public async Task DeleteProduct_ThrowsMyApplicationException_WhenProductDoesNotExist()
+        {
+            // Arrange
+            var productId = 999;
+
+            _mockGameService
+                .Setup(s => s.DeleteGame(productId))
+                .ThrowsAsync(new MyApplicationException(ErrorStatus.NotFound, "Product not found"));
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _controller.DeleteGame(productId));
+
+            Assert.Equal(ErrorStatus.NotFound, exception.ErrorStatus);
+            Assert.Equal("Product not found", exception.Message);
         }
     }
 }

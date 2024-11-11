@@ -35,7 +35,6 @@ namespace DAL.Data
             //   }
             //);
 
-            // Configure indexes for Product fields
             modelBuilder.Entity<Product>()
                 .HasIndex(p => p.Name);
 
@@ -47,6 +46,9 @@ namespace DAL.Data
 
             modelBuilder.Entity<Product>()
                 .HasIndex(p => p.TotalRating);
+
+            modelBuilder.Entity<Product>()
+                .HasIndex(p => p.Genre);
 
             //modelBuilder.Entity<Product>().HasData(
             //    new Product
