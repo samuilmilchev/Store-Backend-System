@@ -382,5 +382,153 @@ namespace WebApp1.Tests.ControllerTests
             var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameService.DeleteGame(productId));
             Assert.Equal(ErrorStatus.NotFound, exception.ErrorStatus);
         }
+
+        [Fact]
+        public async Task CreateRating_ReturnsRatingResponse_WhenDataIsValid()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var ratingData = new CreateRatingDto { ProductId = 1, Rating = 4 };
+            var expectedRating = new RatingResponseDto { ProductId = ratingData.ProductId, Rating = ratingData.Rating };
+
+            _mockGameRepository.Setup(repo => repo.CreateRating(userId, ratingData))
+                               .ReturnsAsync(expectedRating);
+
+            // Act
+            var result = await _gameService.CreateRating(userId, ratingData);
+
+            // Assert
+            Assert.Equal(expectedRating.ProductId, result.ProductId);
+            Assert.Equal(expectedRating.Rating, result.Rating);
+        }
+
+        [Fact]
+        public async Task CreateRating_ThrowsKeyNotFoundException_WhenProductDoesNotExist()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var ratingData = new CreateRatingDto { ProductId = 999, Rating = 4 };
+
+            _mockGameRepository.Setup(repo => repo.CreateRating(userId, ratingData))
+                               .ThrowsAsync(new KeyNotFoundException("Product not found"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _gameService.CreateRating(userId, ratingData));
+        }
+
+        [Fact]
+        public async Task DeleteRating_CompletesSuccessfully_WhenRatingExists()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var deleteRatingData = new DeleteRatingDto { ProductId = 1 };
+
+            _mockGameRepository.Setup(repo => repo.DeleteRating(userId, deleteRatingData))
+                               .Returns(Task.CompletedTask);
+
+            // Act & Assert
+            await _gameService.DeleteRating(userId, deleteRatingData);
+        }
+
+        [Fact]
+        public async Task DeleteRating_ThrowsKeyNotFoundException_WhenRatingDoesNotExist()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var deleteRatingData = new DeleteRatingDto { ProductId = 1 };
+
+            _mockGameRepository.Setup(repo => repo.DeleteRating(userId, deleteRatingData))
+                               .ThrowsAsync(new KeyNotFoundException("Rating not found"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<KeyNotFoundException>(() => _gameService.DeleteRating(userId, deleteRatingData));
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsListOfProducts_WhenQueryIsValid()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto { Genre = "Action", SortBy = "Price", SortDirection = "Asc" };
+            var products = new List<SearchResultDto>
+            {
+                new SearchResultDto { Id = 1, Name = "Game1", Genre = "Action" },
+                new SearchResultDto { Id = 2, Name = "Game2", Genre = "Action" }
+            };
+            var expectedResult = new ProductListResultDto { Products = products, Page = 1, PageSize = 2, TotalItems = 2 };
+
+            _mockGameRepository.Setup(repo => repo.ListGames(queryData))
+                               .ReturnsAsync(expectedResult);
+
+            // Act
+            var result = await _gameService.ListGames(queryData);
+
+            // Assert
+            Assert.Equal(expectedResult.TotalItems, result.Products.Count());
+            Assert.Equal(expectedResult.TotalItems, result.TotalItems);
+            Assert.Equal(expectedResult.PageSize, result.PageSize);
+            Assert.Equal(expectedResult.Page, result.Page);
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsEmptyList_WhenNoGamesMatchQuery()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto { Genre = "Nonexistent Genre" };
+
+            _mockGameRepository.Setup(repo => repo.ListGames(queryData))
+                               .ReturnsAsync(new ProductListResultDto { Products = new List<SearchResultDto>(), TotalItems = 0 });
+
+            // Act
+            var result = await _gameService.ListGames(queryData);
+
+            // Assert
+            Assert.Empty(result.Products);
+            Assert.Equal(0, result.TotalItems);
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsPaginatedResults_WhenPageAndPageSizeAreSpecified()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto { Page = 1, PageSize = 2 };
+            var products = new List<SearchResultDto>
+            {
+                new SearchResultDto { Id = 1, Name = "Game1" },
+                new SearchResultDto { Id = 2, Name = "Game2" },
+                new SearchResultDto { Id = 3, Name = "Game3" }
+            };
+            var paginatedResult = new ProductListResultDto
+            {
+                Products = products.Take(queryData.PageSize).ToList(),
+                TotalItems = products.Count,
+                Page = queryData.Page,
+                PageSize = queryData.PageSize
+            };
+
+            _mockGameRepository.Setup(repo => repo.ListGames(queryData))
+                               .ReturnsAsync(paginatedResult);
+
+            // Act
+            var result = await _gameService.ListGames(queryData);
+
+            // Assert
+            Assert.Equal(queryData.PageSize, result.Products.Count());
+            Assert.Equal(products.Count, result.TotalItems);
+            Assert.Equal(queryData.Page, result.Page);
+            Assert.Equal(queryData.PageSize, result.PageSize);
+        }
+
+        [Fact]
+        public async Task ListGames_ThrowsArgumentException_WhenSortingParametersAreInvalid()
+        {
+            // Arrange
+            var invalidQueryData = new ProductQueryDto { SortBy = "InvalidColumn", SortDirection = "InvalidDirection" };
+
+            _mockGameRepository.Setup(repo => repo.ListGames(invalidQueryData))
+                               .ThrowsAsync(new ArgumentException("Invalid sorting parameters"));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => _gameService.ListGames(invalidQueryData));
+        }
     }
 }

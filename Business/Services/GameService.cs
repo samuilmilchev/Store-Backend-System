@@ -72,5 +72,20 @@ namespace Business.Services
         {
             return await _gameRepository.DeleteGame(id);
         }
+
+        public async Task<RatingResponseDto> CreateRating(Guid userId, CreateRatingDto ratingData)
+        {
+            return await _gameRepository.CreateRating(userId, ratingData);
+        }
+
+        public async Task DeleteRating(Guid userId, DeleteRatingDto deleteRatingData)
+        {
+            await _gameRepository.DeleteRating(userId, deleteRatingData);
+        }
+
+        public async Task<ProductListResultDto> ListGames(ProductQueryDto queryData)
+        {
+            return await _gameRepository.ListGames(queryData);
+        }
     }
 }

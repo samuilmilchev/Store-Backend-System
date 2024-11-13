@@ -1,8 +1,10 @@
 ﻿using Business.Exceptions;
 using Business.Intefraces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Shared.DTOs;
+using System.Security.Claims;
 using WebApp1.Controllers.API;
 using WebApp1.Models;
 
@@ -236,6 +238,116 @@ namespace WebApp1.Tests.ControllerTests
 
             Assert.Equal(ErrorStatus.NotFound, exception.ErrorStatus);
             Assert.Equal("Product not found", exception.Message);
+        }
+
+        [Fact]
+        public async Task CreateRating_ReturnsOkResult_WithCreatedRating()
+        {
+            // Arrange
+            var ratingData = new CreateRatingDto { ProductId = 1, Rating = 4 };
+            var userId = Guid.NewGuid();
+            var createdRating = new RatingResponseDto { ProductId = ratingData.ProductId, Rating = ratingData.Rating };
+
+            _mockGameService.Setup(s => s.CreateRating(userId, ratingData)).ReturnsAsync(createdRating);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) })) }
+            };
+
+            // Act
+            var result = await _controller.CreateRating(ratingData);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(200, okResult.StatusCode);
+            Assert.Equal(createdRating, okResult.Value);
+        }
+
+        [Fact]
+        public async Task DeleteRating_ReturnsNoContent_WhenRatingIsDeleted()
+        {
+            // Arrange
+            var deleteRatingData = new DeleteRatingDto { ProductId = 1 };
+            var userId = Guid.NewGuid();
+
+            _mockGameService.Setup(s => s.DeleteRating(userId, deleteRatingData)).Returns(Task.CompletedTask);
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) })) }
+            };
+
+            // Act
+            var result = await _controller.DeleteRating(deleteRatingData);
+
+            // Assert
+            Assert.IsType<NoContentResult>(result);
+        }
+
+        [Fact]
+        public async Task DeleteRating_ReturnsNotFound_WhenRatingDoesNotExist()
+        {
+            // Arrange
+            var deleteRatingData = new DeleteRatingDto { ProductId = 1 };
+            var userId = Guid.NewGuid();
+
+            _mockGameService.Setup(s => s.DeleteRating(userId, deleteRatingData))
+                            .ThrowsAsync(new MyApplicationException(ErrorStatus.NotFound, "Rating not found"));
+
+            _controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = new ClaimsPrincipal(new ClaimsIdentity(new Claim[] { new Claim(ClaimTypes.NameIdentifier, userId.ToString()) })) }
+            };
+
+            // Act
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _controller.DeleteRating(deleteRatingData));
+
+            // Assert
+            Assert.Equal(ErrorStatus.NotFound, exception.ErrorStatus);
+            Assert.Equal("Rating not found", exception.Message);
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsOkResult_WithGameList()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto { Genre = "Action", SortBy = "Price", SortDirection = "Asc" };
+
+            List<SearchResultDto> products = new List<SearchResultDto>
+            {
+                new SearchResultDto { Id = 1, Name = "Game1", Genre = "Action"},
+                new SearchResultDto { Id = 2, Name = "Game2", Genre = "Action"}
+            };
+
+            var productsResult = new ProductListResultDto { Products = products, Page = 1, PageSize = 2, TotalItems = 2 };
+
+
+            _mockGameService.Setup(s => s.ListGames(queryData)).ReturnsAsync(productsResult);
+
+            // Act
+            var result = await _controller.ListGames(queryData);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(200, okResult.StatusCode);
+            Assert.Equal(productsResult, okResult.Value);
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsOkResult_WithEmptyList_WhenNoGamesFound()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto { Genre = "NonExistentGenre" };
+            var emptyProductList = new ProductListResultDto { Products = new List<SearchResultDto>(), Page = 1, PageSize = 10, TotalItems = 0 };
+
+            _mockGameService.Setup(s => s.ListGames(queryData)).ReturnsAsync(emptyProductList);
+
+            // Act
+            var result = await _controller.ListGames(queryData);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal(200, okResult.StatusCode);
+            Assert.Empty(((ProductListResultDto)okResult.Value).Products);
         }
     }
 }
