@@ -4,7 +4,8 @@
     {
         NotFound,
         InvalidData,
-        InvalidOperation
+        InvalidOperation,
+        NullReference
     }
 
     public class MyApplicationException : Exception

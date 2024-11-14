@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using Business.Exceptions;
 using Business.Intefraces;
+using DAL.Entities;
 using DAL.Repository.Interfaces;
 using Shared.DTOs;
 
@@ -75,17 +77,85 @@ namespace Business.Services
 
         public async Task<RatingResponseDto> CreateRating(Guid userId, CreateRatingDto ratingData)
         {
-            return await _gameRepository.CreateRating(userId, ratingData);
+            var product = await _gameRepository.FindGameById(ratingData.ProductId);
+
+            if (product == null)
+            {
+                throw new MyApplicationException(ErrorStatus.NotFound, $"Product with id {ratingData.ProductId} was not found.");
+            }
+
+            if (product.Ratings.Any(x => x.UserId == userId))
+            {
+                throw new MyApplicationException(ErrorStatus.InvalidOperation, ("You have already review this product."));
+            }
+
+            ProductRating rating = _mapper.Map<ProductRating>(ratingData);
+            rating.UserId = userId;
+
+            product.TotalRating = CalculateTotalRatingCreate(product, rating);
+
+            var result = await _gameRepository.CreateRating(product, rating);
+
+            return _mapper.Map<RatingResponseDto>(rating);
         }
 
         public async Task DeleteRating(Guid userId, DeleteRatingDto deleteRatingData)
         {
-            await _gameRepository.DeleteRating(userId, deleteRatingData);
+            var allRatings = _gameRepository.GetRatings();
+
+            var rating = allRatings.FirstOrDefault(x => x.UserId == userId && x.ProductId == deleteRatingData.ProductId);
+
+            if (rating == null)
+            {
+                throw new MyApplicationException(ErrorStatus.NotFound, $"Rating was not found.");
+            }
+
+            var product = _gameRepository.GetProducts()
+                .FirstOrDefault(x => x.Id == deleteRatingData.ProductId);
+
+            if (product == null)
+            {
+                throw new MyApplicationException(ErrorStatus.NotFound, $"Product with id {deleteRatingData.ProductId} does not exist.");
+            }
+
+            product.TotalRating = CalculateTotalRatingDelete(product, rating);
+
+            await _gameRepository.DeleteRating(userId, rating);
         }
 
         public async Task<ProductListResultDto> ListGames(ProductQueryDto queryData)
         {
-            return await _gameRepository.ListGames(queryData);
+            var listGames = await _gameRepository.ListGames(queryData);
+
+            var responseProducts = _mapper.Map<List<SearchResultDto>>(listGames);
+
+            return new ProductListResultDto
+            {
+                Products = responseProducts,
+                TotalItems = listGames.Count(),
+                Page = queryData.Page,
+                PageSize = queryData.PageSize
+            };
+        }
+
+        public double CalculateTotalRatingCreate(Product product, ProductRating rating)
+        {
+            var sumOfRatings = product.Ratings.Sum(x => x.Rating);
+            sumOfRatings += rating.Rating;
+            var countRatings = product.Ratings.Count();
+            countRatings++;
+
+            return sumOfRatings / countRatings;
+        }
+
+        public double CalculateTotalRatingDelete(Product product, ProductRating rating)
+        {
+            var sumOfRatings = product.Ratings.Sum(x => x.Rating);
+            sumOfRatings -= rating.Rating;
+            var countRatings = product.Ratings.Count();
+            countRatings--;
+
+            return sumOfRatings / countRatings;
         }
     }
 }

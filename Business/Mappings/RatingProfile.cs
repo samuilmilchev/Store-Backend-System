@@ -10,6 +10,7 @@ namespace Business.Mappings
         {
             CreateMap<CreateRatingDto, ProductRating>()
            .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
+           .ForMember(dest => dest.ProductId, opt => opt.MapFrom(src => src.ProductId))
            .ForMember(dest => dest.Rating, opt => opt.MapFrom(src => src.Rating));
 
             CreateMap<ProductRating, RatingResponseDto>()

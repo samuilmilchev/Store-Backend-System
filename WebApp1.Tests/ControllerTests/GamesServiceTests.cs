@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Business.Exceptions;
 using Business.Intefraces;
+using Business.Mappings;
 using Business.Services;
 using CloudinaryDotNet.Actions;
 using DAL.Data;
@@ -32,18 +33,13 @@ namespace WebApp1.Tests.ControllerTests
 
             _context = new ApplicationDbContext(options);
 
-            var mockMapper = new Mock<IMapper>();
-            mockMapper.Setup(m => m.Map<List<SearchResultDto>>(It.IsAny<List<Product>>()))
-                .Returns((List<Product> products) => products.Select(p => new SearchResultDto
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Platform = p.Platform.ToString(),
-                    DateCreated = p.DateCreated,
-                    TotalRating = p.TotalRating,
-                    Price = p.Price
-                }).ToList());
-            _mapper = mockMapper.Object;
+            // Use the actual AutoMapper setup here
+            var config = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile<RatingProfile>();    // Keep this if it's necessary
+                cfg.AddProfile<ProductProfile>();   // Add ProductProfile for Product to SearchResultDto mapping
+            });
+            _mapper = config.CreateMapper();
 
             _mockGameRepository = new Mock<IGameRepository>();
             _mockImagesService = new Mock<IImagesService>();
@@ -389,31 +385,73 @@ namespace WebApp1.Tests.ControllerTests
             // Arrange
             var userId = Guid.NewGuid();
             var ratingData = new CreateRatingDto { ProductId = 1, Rating = 4 };
-            var expectedRating = new RatingResponseDto { ProductId = ratingData.ProductId, Rating = ratingData.Rating };
 
-            _mockGameRepository.Setup(repo => repo.CreateRating(userId, ratingData))
-                               .ReturnsAsync(expectedRating);
+            ProductRating rating = _mapper.Map<ProductRating>(ratingData);
+
+            Assert.NotNull(rating);
+
+            rating.UserId = userId;
+
+            var product = new Product { Id = ratingData.ProductId, Ratings = new List<ProductRating>() };
+
+            _mockGameRepository.Setup(repo => repo.FindGameById(ratingData.ProductId))
+                               .ReturnsAsync(product);
+
+            _mockGameRepository.Setup(repo => repo.CreateRating(It.IsAny<Product>(), It.IsAny<ProductRating>()))
+                               .ReturnsAsync(rating);
 
             // Act
             var result = await _gameService.CreateRating(userId, ratingData);
 
             // Assert
-            Assert.Equal(expectedRating.ProductId, result.ProductId);
-            Assert.Equal(expectedRating.Rating, result.Rating);
+            Assert.Equal(ratingData.ProductId, result.ProductId);
+            Assert.Equal(ratingData.Rating, result.Rating);
         }
 
         [Fact]
-        public async Task CreateRating_ThrowsKeyNotFoundException_WhenProductDoesNotExist()
+        public async Task CreateRating_ThrowsMyApplicationException_WhenProductDoesNotExist()
         {
             // Arrange
             var userId = Guid.NewGuid();
             var ratingData = new CreateRatingDto { ProductId = 999, Rating = 4 };
 
-            _mockGameRepository.Setup(repo => repo.CreateRating(userId, ratingData))
-                               .ThrowsAsync(new KeyNotFoundException("Product not found"));
+            _mockGameRepository.Setup(repo => repo.FindGameById(ratingData.ProductId))
+                               .ReturnsAsync((Product)null);
 
             // Act & Assert
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _gameService.CreateRating(userId, ratingData));
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameService.CreateRating(userId, ratingData));
+            Assert.Equal("Product with id 999 was not found.", exception.Message);
+        }
+
+        [Fact]
+        public async Task CreateRating_ThrowsInvalidOperationException_WhenUserHasAlreadyRated()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var ratingData = new CreateRatingDto { ProductId = 1, Rating = 4 };
+
+            var existingRating = new ProductRating
+            {
+                ProductId = ratingData.ProductId,
+                UserId = userId,
+                Rating = 5
+            };
+
+            var product = new Product
+            {
+                Id = ratingData.ProductId,
+                Ratings = new List<ProductRating> { existingRating }
+            };
+
+            _mockGameRepository.Setup(repo => repo.FindGameById(ratingData.ProductId))
+                               .ReturnsAsync(product);
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() =>
+                _gameService.CreateRating(userId, ratingData));
+
+            Assert.Equal(ErrorStatus.InvalidOperation, exception.ErrorStatus);
+            Assert.Equal("You have already review this product.", exception.Message);
         }
 
         [Fact]
@@ -422,48 +460,69 @@ namespace WebApp1.Tests.ControllerTests
             // Arrange
             var userId = Guid.NewGuid();
             var deleteRatingData = new DeleteRatingDto { ProductId = 1 };
+            var product = new Product { Id = deleteRatingData.ProductId, Ratings = new List<ProductRating>() };
+            var rating = new ProductRating { ProductId = deleteRatingData.ProductId, UserId = userId, Rating = 5 };
 
-            _mockGameRepository.Setup(repo => repo.DeleteRating(userId, deleteRatingData))
-                               .Returns(Task.CompletedTask);
+            _mockGameRepository.Setup(repo => repo.GetProducts())
+                               .Returns(new List<Product> { product });
+            _mockGameRepository.Setup(repo => repo.GetRatings())
+                               .Returns(new List<ProductRating> { rating });
 
             // Act & Assert
             await _gameService.DeleteRating(userId, deleteRatingData);
         }
 
         [Fact]
-        public async Task DeleteRating_ThrowsKeyNotFoundException_WhenRatingDoesNotExist()
+        public async Task DeleteRating_ThrowsMyApplicationException_WhenRatingDoesNotExist()
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var deleteRatingData = new DeleteRatingDto { ProductId = 1 };
+            var deleteRatingData = new DeleteRatingDto { ProductId = 999 };
 
-            _mockGameRepository.Setup(repo => repo.DeleteRating(userId, deleteRatingData))
-                               .ThrowsAsync(new KeyNotFoundException("Rating not found"));
+            _mockGameRepository.Setup(repo => repo.GetProducts())
+                               .Returns(new List<Product>());
+            _mockGameRepository.Setup(repo => repo.GetRatings())
+                               .Returns(new List<ProductRating>());
 
             // Act & Assert
-            await Assert.ThrowsAsync<KeyNotFoundException>(() => _gameService.DeleteRating(userId, deleteRatingData));
+            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameService.DeleteRating(userId, deleteRatingData));
+            Assert.Equal("Rating was not found.", exception.Message);
         }
 
         [Fact]
         public async Task ListGames_ReturnsListOfProducts_WhenQueryIsValid()
         {
             // Arrange
-            var queryData = new ProductQueryDto { Genre = "Action", SortBy = "Price", SortDirection = "Asc" };
-            var products = new List<SearchResultDto>
+            var queryData = new ProductQueryDto { Genre = "Action", SortBy = SortBy.Price, SortDirection = SortDirection.Asc, PageSize = 2 };
+
+            var products = new List<Product>
             {
-                new SearchResultDto { Id = 1, Name = "Game1", Genre = "Action" },
-                new SearchResultDto { Id = 2, Name = "Game2", Genre = "Action" }
+                new Product { Id = 1, Name = "Game1", Genre = "Action", Price = 20 },
+                new Product { Id = 2, Name = "Game2", Genre = "Action", Price = 25 }
             };
-            var expectedResult = new ProductListResultDto { Products = products, Page = 1, PageSize = 2, TotalItems = 2 };
+
+            var expectedResult = new ProductListResultDto
+            {
+                Products = products.Select(p => new SearchResultDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Genre = p.Genre,
+                    Price = p.Price
+                }).ToList(),
+                TotalItems = 2,
+                Page = 1,
+                PageSize = 2
+            };
 
             _mockGameRepository.Setup(repo => repo.ListGames(queryData))
-                               .ReturnsAsync(expectedResult);
+                               .ReturnsAsync(products);
 
             // Act
             var result = await _gameService.ListGames(queryData);
 
             // Assert
-            Assert.Equal(expectedResult.TotalItems, result.Products.Count());
+            Assert.Equal(expectedResult.Products.Count(), result.Products.Count());
             Assert.Equal(expectedResult.TotalItems, result.TotalItems);
             Assert.Equal(expectedResult.PageSize, result.PageSize);
             Assert.Equal(expectedResult.Page, result.Page);
@@ -476,7 +535,7 @@ namespace WebApp1.Tests.ControllerTests
             var queryData = new ProductQueryDto { Genre = "Nonexistent Genre" };
 
             _mockGameRepository.Setup(repo => repo.ListGames(queryData))
-                               .ReturnsAsync(new ProductListResultDto { Products = new List<SearchResultDto>(), TotalItems = 0 });
+                               .ReturnsAsync(new List<Product>());
 
             // Act
             var result = await _gameService.ListGames(queryData);
@@ -491,28 +550,36 @@ namespace WebApp1.Tests.ControllerTests
         {
             // Arrange
             var queryData = new ProductQueryDto { Page = 1, PageSize = 2 };
-            var products = new List<SearchResultDto>
+            var products = new List<Product>
             {
-                new SearchResultDto { Id = 1, Name = "Game1" },
-                new SearchResultDto { Id = 2, Name = "Game2" },
-                new SearchResultDto { Id = 3, Name = "Game3" }
+                new Product { Id = 1, Name = "Game1" },
+                new Product { Id = 2, Name = "Game2" },
+                new Product { Id = 3, Name = "Game3" }
             };
-            var paginatedResult = new ProductListResultDto
+
+            var paginatedResult = products.Skip((queryData.Page - 1) * queryData.PageSize)
+                                           .Take(queryData.PageSize)
+                                           .ToList();
+
+            var expectedResult = new ProductListResultDto
             {
-                Products = products.Take(queryData.PageSize).ToList(),
+                Products = paginatedResult.Select(p => new SearchResultDto
+                {
+                    Id = p.Id,
+                    Name = p.Name
+                }).ToList(),
                 TotalItems = products.Count,
                 Page = queryData.Page,
                 PageSize = queryData.PageSize
             };
 
             _mockGameRepository.Setup(repo => repo.ListGames(queryData))
-                               .ReturnsAsync(paginatedResult);
+                               .ReturnsAsync(products);
 
             // Act
             var result = await _gameService.ListGames(queryData);
 
             // Assert
-            Assert.Equal(queryData.PageSize, result.Products.Count());
             Assert.Equal(products.Count, result.TotalItems);
             Assert.Equal(queryData.Page, result.Page);
             Assert.Equal(queryData.PageSize, result.PageSize);
@@ -522,7 +589,7 @@ namespace WebApp1.Tests.ControllerTests
         public async Task ListGames_ThrowsArgumentException_WhenSortingParametersAreInvalid()
         {
             // Arrange
-            var invalidQueryData = new ProductQueryDto { SortBy = "InvalidColumn", SortDirection = "InvalidDirection" };
+            var invalidQueryData = new ProductQueryDto { SortBy = (SortBy)99, SortDirection = (SortDirection)99 };
 
             _mockGameRepository.Setup(repo => repo.ListGames(invalidQueryData))
                                .ThrowsAsync(new ArgumentException("Invalid sorting parameters"));

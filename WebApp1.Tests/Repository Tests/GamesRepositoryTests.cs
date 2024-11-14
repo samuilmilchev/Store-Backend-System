@@ -288,46 +288,16 @@ namespace WebApp1.Tests.Repository_Tests
         public async Task CreateRating_ReturnsRating_WhenValidData()
         {
             // Arrange
-            var userId = Guid.NewGuid();
-            var ratingData = new CreateRatingDto { ProductId = 1, Rating = 8 };
+            var product = _gameRepository.GetProducts().First();
+            var rating = new ProductRating { ProductId = product.Id, Rating = 8, UserId = Guid.NewGuid() };
 
             // Act
-            var result = await _gameRepository.CreateRating(userId, ratingData);
+            var result = await _gameRepository.CreateRating(product, rating);
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(ratingData.ProductId, result.ProductId);
-            Assert.Equal(ratingData.Rating, result.Rating);
-        }
-
-        [Fact]
-        public async Task CreateRating_ThrowsNotFoundException_WhenProductNotFound()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var ratingData = new CreateRatingDto { ProductId = 999, Rating = 8 };
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.CreateRating(userId, ratingData));
-            Assert.Equal("Product with id 999 was not found.", exception.Message);
-        }
-
-        [Fact]
-        public async Task CreateRating_ThrowsInvalidOperationException_WhenUserAlreadyReviewed()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var ratingData = new CreateRatingDto { ProductId = 1, Rating = 8 };
-
-            using (var context = new ApplicationDbContext(_options))
-            {
-                context.Ratings.Add(new ProductRating { ProductId = 1, UserId = userId, Rating = 5 });
-                context.SaveChanges();
-            }
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.CreateRating(userId, ratingData));
-            Assert.Equal("You have already review this product.", exception.Message);
+            Assert.Equal(rating.ProductId, result.ProductId);
+            Assert.Equal(rating.Rating, result.Rating);
         }
 
         [Fact]
@@ -335,36 +305,24 @@ namespace WebApp1.Tests.Repository_Tests
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var productId = 1;
-            var ratingData = new DeleteRatingDto { ProductId = productId };
+            var product = _gameRepository.GetProducts().First();
+            var rating = new ProductRating { ProductId = product.Id, UserId = userId, Rating = 7 };
 
             using (var context = new ApplicationDbContext(_options))
             {
-                context.Ratings.Add(new ProductRating { ProductId = productId, UserId = userId, Rating = 7 });
+                context.Ratings.Add(rating);
                 context.SaveChanges();
             }
 
             // Act
-            await _gameRepository.DeleteRating(userId, ratingData);
+            await _gameRepository.DeleteRating(userId, rating);
 
             // Assert
             using (var context = new ApplicationDbContext(_options))
             {
-                var rating = context.Ratings.FirstOrDefault(r => r.UserId == userId && r.ProductId == productId);
-                Assert.Null(rating);
+                var result = context.Ratings.FirstOrDefault(r => r.UserId == userId && r.ProductId == product.Id);
+                Assert.Null(result);
             }
-        }
-
-        [Fact]
-        public async Task DeleteRating_ThrowsNotFoundException_WhenRatingNotFound()
-        {
-            // Arrange
-            var userId = Guid.NewGuid();
-            var ratingData = new DeleteRatingDto { ProductId = 999 };
-
-            // Act & Assert
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.DeleteRating(userId, ratingData));
-            Assert.Equal("Rating was not found.", exception.Message);
         }
 
         [Fact]
@@ -375,15 +333,15 @@ namespace WebApp1.Tests.Repository_Tests
             {
                 Page = 1,
                 PageSize = 2,
-                SortBy = "TotalRating",
-                SortDirection = "desc"
+                SortBy = SortBy.Rating,
+                SortDirection = SortDirection.Desc
             };
 
             // Act
             var result = await _gameRepository.ListGames(queryData);
 
             // Assert
-            Assert.Equal(2, result.Products.Count());
+            Assert.Equal(2, result.Count());
         }
 
         [Fact]
@@ -395,15 +353,15 @@ namespace WebApp1.Tests.Repository_Tests
                 Page = 1,
                 PageSize = 10,
                 Genre = "Action",
-                SortBy = "TotalRating",
-                SortDirection = "asc"
+                SortBy = SortBy.Rating,
+                SortDirection = SortDirection.Asc
             };
 
             // Act
             var result = await _gameRepository.ListGames(queryData);
 
             // Assert
-            Assert.All(result.Products, product => Assert.Equal("Action", product.Genre));
+            Assert.All(result, product => Assert.Equal("Action", product.Genre));
         }
 
         [Fact]
@@ -415,15 +373,15 @@ namespace WebApp1.Tests.Repository_Tests
                 Page = 1,
                 PageSize = 10,
                 Genre = "Nonexistent",
-                SortBy = "TotalRating",
-                SortDirection = "asc"
+                SortBy = SortBy.Rating,
+                SortDirection = SortDirection.Asc
             };
 
             // Act
             var result = await _gameRepository.ListGames(queryData);
 
             // Assert
-            Assert.Empty(result.Products);
+            Assert.Empty(result);
         }
 
         [Fact]
@@ -432,8 +390,8 @@ namespace WebApp1.Tests.Repository_Tests
             // Arrange
             var queryData = new ProductQueryDto
             {
-                SortBy = "price",
-                SortDirection = "asc",
+                SortBy = SortBy.Price,
+                SortDirection = SortDirection.Asc,
                 Page = 1,
                 PageSize = 10
             };
@@ -441,11 +399,9 @@ namespace WebApp1.Tests.Repository_Tests
             // Act
             var result = await _gameRepository.ListGames(queryData);
 
-            var resultList = result.Products.ToList();
-
             // Assert
             Assert.NotNull(result);
-            Assert.True(resultList[0].Price <= resultList[1].Price);
+            Assert.True(result[0].Price <= result[1].Price);
         }
 
         [Fact]
@@ -454,8 +410,8 @@ namespace WebApp1.Tests.Repository_Tests
             // Arrange
             var queryData = new ProductQueryDto
             {
-                SortBy = "price",
-                SortDirection = "desc",
+                SortBy = SortBy.Price,
+                SortDirection = SortDirection.Desc,
                 Page = 1,
                 PageSize = 10
             };
@@ -463,11 +419,9 @@ namespace WebApp1.Tests.Repository_Tests
             // Act
             var result = await _gameRepository.ListGames(queryData);
 
-            var resultList = result.Products.ToList();
-
             // Assert
-            Assert.NotNull(resultList);
-            Assert.True(resultList[0].Price >= resultList[1].Price);
+            Assert.NotNull(result);
+            Assert.True(result[0].Price >= result[1].Price);
         }
 
         [Fact]
@@ -476,8 +430,8 @@ namespace WebApp1.Tests.Repository_Tests
             // Arrange
             var queryData = new ProductQueryDto
             {
-                SortBy = "rating",
-                SortDirection = "asc",
+                SortBy = SortBy.Rating,
+                SortDirection = SortDirection.Asc,
                 Page = 1,
                 PageSize = 10
             };
@@ -485,11 +439,9 @@ namespace WebApp1.Tests.Repository_Tests
             // Act
             var result = await _gameRepository.ListGames(queryData);
 
-            var resultList = result.Products.ToList();
-
             // Assert
             Assert.NotNull(result);
-            Assert.True(resultList[0].TotalRating <= resultList[1].TotalRating);
+            Assert.True(result[0].TotalRating <= result[1].TotalRating);
         }
 
         [Fact]
@@ -498,8 +450,8 @@ namespace WebApp1.Tests.Repository_Tests
             // Arrange
             var queryData = new ProductQueryDto
             {
-                SortBy = "rating",
-                SortDirection = "desc",
+                SortBy = SortBy.Rating,
+                SortDirection = SortDirection.Desc,
                 Page = 1,
                 PageSize = 10
             };
@@ -507,11 +459,9 @@ namespace WebApp1.Tests.Repository_Tests
             // Act
             var result = await _gameRepository.ListGames(queryData);
 
-            var resultList = result.Products.ToList();
-
             // Assert
             Assert.NotNull(result);
-            Assert.True(resultList[0].TotalRating >= resultList[1].TotalRating);
+            Assert.True(result[0].TotalRating >= result[1].TotalRating);
         }
     }
 }

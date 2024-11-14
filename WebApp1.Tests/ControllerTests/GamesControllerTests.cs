@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Shared.DTOs;
+using Shared.Enums;
 using System.Security.Claims;
 using WebApp1.Controllers.API;
 using WebApp1.Models;
@@ -310,7 +311,7 @@ namespace WebApp1.Tests.ControllerTests
         public async Task ListGames_ReturnsOkResult_WithGameList()
         {
             // Arrange
-            var queryData = new ProductQueryDto { Genre = "Action", SortBy = "Price", SortDirection = "Asc" };
+            var queryData = new ProductQueryDto { Genre = "Action", SortBy = SortBy.Price, SortDirection = SortDirection.Asc };
 
             List<SearchResultDto> products = new List<SearchResultDto>
             {

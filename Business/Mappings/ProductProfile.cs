@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using DAL.Entities;
 using Shared.DTOs;
+using Shared.Enums;
 
 namespace Business.Mappings
 {
@@ -15,6 +16,11 @@ namespace Business.Mappings
                 .ForMember(dest => dest.Logo, opt => opt.MapFrom(src => src.Logo))
                 .ForMember(dest => dest.Background, opt => opt.MapFrom(src => src.Background))
                 .ForMember(dest => dest.Count, opt => opt.MapFrom(src => src.Count));
+
+            CreateMap<SearchResultDto, Product>()
+            .ForMember(dest => dest.Platform, opt => opt.MapFrom(src => Enum.Parse<Platforms>(src.Platform)))
+            .ForMember(dest => dest.Rating, opt => opt.MapFrom(src => Enum.Parse<Rating>(src.Rating)))
+            .ForMember(dest => dest.Ratings, opt => opt.MapFrom(src => src.Ratings));
 
             CreateMap<CreateProductDto, Product>()
             .ForMember(dest => dest.DateCreated, opt => opt.MapFrom(_ => DateTime.UtcNow))

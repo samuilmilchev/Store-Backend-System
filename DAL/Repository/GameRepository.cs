@@ -6,6 +6,7 @@ using DAL.Repository.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Shared.DTOs;
+using Shared.Enums;
 
 namespace DAL.Repository
 {
@@ -67,6 +68,7 @@ namespace DAL.Repository
 
             var product = await _context.Products
                 .Where(p => !p.IsDeleted)
+                .Include(p => p.Ratings)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (product == null)
@@ -75,6 +77,26 @@ namespace DAL.Repository
             }
 
             return _mapper.Map<SearchResultDto>(product);
+        }
+
+        public async Task<Product> FindGameById(int id)
+        {
+            if (id <= 0 || id > _context.Products.Count())
+            {
+                throw new MyApplicationException(ErrorStatus.InvalidData, "Invalid input.");
+            }
+
+            var product = await _context.Products
+                .Where(p => !p.IsDeleted)
+                .Include(p => p.Ratings)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (product == null)
+            {
+                throw new MyApplicationException(ErrorStatus.NotFound, $"Product with id {id} does not exist.");
+            }
+
+            return product;
         }
 
         public async Task<SearchResultDto> CreateGame(CreateProductDto productData)
@@ -138,56 +160,23 @@ namespace DAL.Repository
             return true;
         }
 
-        public async Task<RatingResponseDto> CreateRating(Guid userId, CreateRatingDto ratingData)
+        public async Task<ProductRating> CreateRating(Product product, ProductRating rating)
         {
-            var product = await _context.Products
-                .Where(x => !x.IsDeleted)
-                .Include(x => x.Ratings)
-               .FirstOrDefaultAsync(p => p.Id == ratingData.ProductId);
-
-            if (product == null)
-            {
-                throw new MyApplicationException(ErrorStatus.NotFound, $"Product with id {ratingData.ProductId} was not found.");
-            }
-
-            if (product.Ratings.Any(x => x.UserId == userId))
-            {
-                throw new MyApplicationException(ErrorStatus.InvalidOperation, ("You have already review this product."));
-            }
-
-            ProductRating rating = _mapper.Map<ProductRating>(ratingData);
-            rating.UserId = userId;
-
             product.Ratings.Add(rating);
-            product.TotalRating = product.Ratings.Sum(x => x.Rating) / product.Ratings.Count;
 
             _context.Ratings.Add(rating);
             _context.SaveChanges();
 
-            return _mapper.Map<RatingResponseDto>(rating);
+            return rating;
         }
 
-        public async Task DeleteRating(Guid userId, DeleteRatingDto deleteRatingData)
+        public async Task DeleteRating(Guid userId, ProductRating rating)
         {
-            var rating = _context.Ratings
-                .FirstOrDefault(x => x.UserId == userId && x.ProductId == deleteRatingData.ProductId);
-
-            if (rating == null)
-            {
-                throw new MyApplicationException(ErrorStatus.NotFound, $"Rating was not found.");
-            }
-
-            var product = _context.Products
-                .Include(x => x.Ratings)
-                .FirstOrDefault(x => x.Id == deleteRatingData.ProductId);
-
-            product.TotalRating = product.Ratings.Sum(x => x.Rating) / product.Ratings.Count;
-
             _context.Ratings.Remove(rating);
             _context.SaveChanges();
         }
 
-        public async Task<ProductListResultDto> ListGames(ProductQueryDto queryData)
+        public async Task<List<Product>> ListGames(ProductQueryDto queryData)
         {
             var productsQuery = _context.Products
                 .Where(p => !p.IsDeleted);
@@ -202,32 +191,39 @@ namespace DAL.Repository
                 productsQuery = productsQuery.Where(p => (int)p.Rating >= queryData.Age);
             }
 
-            productsQuery = queryData.SortBy.ToLower() switch
+            productsQuery = queryData.SortBy switch
             {
-                "price" => queryData.SortDirection.ToLower() == "asc"
+                SortBy.Price => queryData.SortDirection == SortDirection.Asc
                     ? productsQuery.OrderBy(p => p.Price)
                     : productsQuery.OrderByDescending(p => p.Price),
-                _ => queryData.SortDirection.ToLower() == "asc"
+                _ => queryData.SortDirection == SortDirection.Asc
                     ? productsQuery.OrderBy(p => p.TotalRating)
                     : productsQuery.OrderByDescending(p => p.TotalRating),
             };
 
             int totalItems = await productsQuery.CountAsync();
 
-            var products = await productsQuery
+            return await productsQuery
                 .Skip((queryData.Page - 1) * queryData.PageSize)
                 .Take(queryData.PageSize)
                 .ToListAsync();
+        }
 
-            var responseProducts = _mapper.Map<List<SearchResultDto>>(products);
+        public List<ProductRating> GetRatings()
+        {
+            var ratings = _context.Ratings.ToList();
 
-            return new ProductListResultDto
-            {
-                Products = responseProducts,
-                TotalItems = totalItems,
-                Page = queryData.Page,
-                PageSize = queryData.PageSize
-            };
+            return ratings;
+        }
+
+        public List<Product> GetProducts()
+        {
+            var products = _context.Products
+                .Where(p => !p.IsDeleted)
+                .Include(p => p.Ratings)
+                .ToList();
+
+            return products;
         }
     }
 }
