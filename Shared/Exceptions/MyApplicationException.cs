@@ -3,7 +3,9 @@
     public enum ErrorStatus
     {
         NotFound,
-        InvalidData
+        InvalidData,
+        InvalidOperation,
+        NullReference
     }
 
     public class MyApplicationException : Exception

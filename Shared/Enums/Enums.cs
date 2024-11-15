@@ -15,4 +15,16 @@
         Mature = 3,
         Adult = 4
     }
+
+    public enum SortBy
+    {
+        Rating,
+        Price
+    }
+
+    public enum SortDirection
+    {
+        Asc,
+        Desc
+    }
 }

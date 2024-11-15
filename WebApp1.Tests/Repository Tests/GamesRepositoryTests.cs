@@ -37,10 +37,14 @@ namespace WebApp1.Tests.Repository_Tests
 
             var contextForRepo = new ApplicationDbContext(_options);
 
-            var config = new MapperConfiguration(cfg => cfg.AddProfile<ProductProfile>());
+            var config = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile<ProductProfile>();
+                cfg.AddProfile<RatingProfile>();
+            });
             _mapper = config.CreateMapper();
 
-            _gameRepository = new GameRepository(contextForRepo, _mapper);
+            _gameRepository = new GameRepository(contextForRepo);
         }
 
         [Fact]
@@ -129,15 +133,6 @@ namespace WebApp1.Tests.Repository_Tests
         }
 
         [Fact]
-        public async Task SearchGamesAsync_ThrowsNotFoundException_WhenTermIsEmpty()
-        {
-            // Act
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.SearchGamesAsync("", 10, 0));
-            // Assert
-            Assert.Equal("Invalid input.", exception.Message);
-        }
-
-        [Fact]
         public async Task SearchGamesAsync_ReturnsEmptyList_WhenOffsetExceedsResults()
         {
             // Act
@@ -164,7 +159,7 @@ namespace WebApp1.Tests.Repository_Tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.SearchGameByIdAsync(999));
-            Assert.Equal("Invalid input.", exception.Message);
+            Assert.Equal($"Product with id {999} does not exist.", exception.Message);
         }
 
         [Fact]
@@ -182,7 +177,7 @@ namespace WebApp1.Tests.Repository_Tests
         public async Task CreateProduct_AddsNewProductToDatabase()
         {
             // Arrange
-            var newProduct = new CreateProductDto()
+            var newProduct = new Product()
             {
                 Name = "New Game",
                 Platform = Platforms.Windows,
@@ -207,8 +202,7 @@ namespace WebApp1.Tests.Repository_Tests
         public async Task UpdateProduct_UpdatesExistingProductFields()
         {
             // Arrange
-            var productId = 1;
-            var updatedProduct = new UpdateProductDto
+            var updatedProduct = new Product
             {
                 Name = "Updated Game Name",
                 Platform = Platforms.Mac,
@@ -216,12 +210,12 @@ namespace WebApp1.Tests.Repository_Tests
             };
 
             // Act
-            await _gameRepository.UpdateGame(productId, updatedProduct);
+            await _gameRepository.UpdateGame(updatedProduct);
 
             // Assert
             using (var context = new ApplicationDbContext(_options))
             {
-                var productInDb = await context.Products.FindAsync(productId);
+                var productInDb = await context.Products.FindAsync(updatedProduct.Id);
                 Assert.NotNull(productInDb);
                 Assert.Equal("Updated Game Name", productInDb.Name);
                 Assert.Equal(Platforms.Mac, productInDb.Platform);
@@ -230,54 +224,206 @@ namespace WebApp1.Tests.Repository_Tests
         }
 
         [Fact]
-        public async Task UpdateProduct_ThrowExceptionNotFound()
+        public async Task DeleteProduct_RemovesProductFromDatabase()
         {
             // Arrange
-            var productId = 5;
-            var updatedProduct = new UpdateProductDto
+            var product = new Product
             {
-                Name = "Updated Game Name",
+                Name = "Game Name",
                 Platform = Platforms.Mac,
                 Genre = "Strategy"
             };
 
             // Act
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.UpdateGame(productId, updatedProduct));
-
-            // Assert
-            Assert.Equal($"Product with id {productId} does not exist.", exception.Message);
-        }
-
-        [Fact]
-        public async Task DeleteProduct_RemovesProductFromDatabase()
-        {
-            // Arrange
-            var productId = 1;
-
-            // Act
-            await _gameRepository.DeleteGame(productId);
+            await _gameRepository.DeleteGame(product);
 
             // Assert
             using (var context = new ApplicationDbContext(_options))
             {
-                var productInDb = await context.Products.FindAsync(productId);
+                var productInDb = await context.Products.FindAsync(product.Id);
 
                 Assert.True(productInDb.IsDeleted);
             }
         }
 
         [Fact]
-        public async Task DeleteProduct_ThrowExceptionNotFound()
+        public async Task CreateRating_ReturnsRating_WhenValidData()
         {
             // Arrange
-            var productId = 5;
+            var product = _gameRepository.GetProducts().First();
+            var rating = new ProductRating { ProductId = product.Id, Rating = 8, UserId = Guid.NewGuid() };
 
             // Act
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.DeleteGame(productId));
+            var result = await _gameRepository.CreateRating(product, rating);
 
             // Assert
-            Assert.Equal($"Product with id {productId} was not found.", exception.Message);
+            Assert.NotNull(result);
+            Assert.Equal(rating.ProductId, result.ProductId);
+            Assert.Equal(rating.Rating, result.Rating);
+        }
 
+        [Fact]
+        public async Task DeleteRating_DeletesRating_WhenValidData()
+        {
+            // Arrange
+            var userId = Guid.NewGuid();
+            var product = _gameRepository.GetProducts().First();
+            var rating = new ProductRating { ProductId = product.Id, UserId = userId, Rating = 7 };
+
+            using (var context = new ApplicationDbContext(_options))
+            {
+                context.Ratings.Add(rating);
+                context.SaveChanges();
+            }
+
+            // Act
+            await _gameRepository.DeleteRating(userId, rating);
+
+            // Assert
+            using (var context = new ApplicationDbContext(_options))
+            {
+                var result = context.Ratings.FirstOrDefault(r => r.UserId == userId && r.ProductId == product.Id);
+                Assert.Null(result);
+            }
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsPagedResults()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto
+            {
+                Page = 1,
+                PageSize = 2,
+                SortBy = SortBy.Rating,
+                SortDirection = SortDirection.Desc
+            };
+
+            // Act
+            var result = await _gameRepository.ListGames(queryData);
+
+            // Assert
+            Assert.Equal(2, result.Count());
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsFilteredResultsByGenre()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto
+            {
+                Page = 1,
+                PageSize = 10,
+                Genre = "Action",
+                SortBy = SortBy.Rating,
+                SortDirection = SortDirection.Asc
+            };
+
+            // Act
+            var result = await _gameRepository.ListGames(queryData);
+
+            // Assert
+            Assert.All(result, product => Assert.Equal("Action", product.Genre));
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsEmptyList_WhenNoMatchingResults()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto
+            {
+                Page = 1,
+                PageSize = 10,
+                Genre = "Nonexistent",
+                SortBy = SortBy.Rating,
+                SortDirection = SortDirection.Asc
+            };
+
+            // Act
+            var result = await _gameRepository.ListGames(queryData);
+
+            // Assert
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsSortedByPriceAscending_WhenSortByPriceAndAscSortDirection()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto
+            {
+                SortBy = SortBy.Price,
+                SortDirection = SortDirection.Asc,
+                Page = 1,
+                PageSize = 10
+            };
+
+            // Act
+            var result = await _gameRepository.ListGames(queryData);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result[0].Price <= result[1].Price);
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsSortedByPriceDescending_WhenSortByPriceAndDescSortDirection()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto
+            {
+                SortBy = SortBy.Price,
+                SortDirection = SortDirection.Desc,
+                Page = 1,
+                PageSize = 10
+            };
+
+            // Act
+            var result = await _gameRepository.ListGames(queryData);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result[0].Price >= result[1].Price);
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsSortedByRatingAscending_WhenSortByRatingAndAscSortDirection()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto
+            {
+                SortBy = SortBy.Rating,
+                SortDirection = SortDirection.Asc,
+                Page = 1,
+                PageSize = 10
+            };
+
+            // Act
+            var result = await _gameRepository.ListGames(queryData);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result[0].TotalRating <= result[1].TotalRating);
+        }
+
+        [Fact]
+        public async Task ListGames_ReturnsSortedByRatingDescending_WhenSortByRatingAndDescSortDirection()
+        {
+            // Arrange
+            var queryData = new ProductQueryDto
+            {
+                SortBy = SortBy.Rating,
+                SortDirection = SortDirection.Desc,
+                Page = 1,
+                PageSize = 10
+            };
+
+            // Act
+            var result = await _gameRepository.ListGames(queryData);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.True(result[0].TotalRating >= result[1].TotalRating);
         }
     }
 }

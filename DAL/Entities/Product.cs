@@ -16,5 +16,6 @@ namespace DAL.Entities
         public string? Background { get; set; }
         public int Count { get; set; }
         public bool IsDeleted { get; set; } = false;
+        public ICollection<ProductRating> Ratings { get; set; } = new List<ProductRating>();
     }
 }

@@ -81,6 +81,7 @@ namespace WebApp1
             builder.Services.AddAutoMapper(typeof(Program));
             builder.Services.AddAutoMapper(typeof(UserProfile));
             builder.Services.AddAutoMapper(typeof(ProductProfile));
+            builder.Services.AddAutoMapper(typeof(RatingProfile));
 
             builder.Services.AddSwaggerDocumentation();
 

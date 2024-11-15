@@ -1,6 +1,8 @@
 ﻿using Business.Intefraces;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DTOs;
+using Shared.Validation;
+using System.Security.Claims;
 using WebApp1.Models;
 
 namespace WebApp1.Controllers.API
@@ -107,6 +109,68 @@ namespace WebApp1.Controllers.API
             var isDeleted = await _gameService.DeleteGame(id);
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Creates a rating for a specified product by the authenticated user.
+        /// </summary>
+        /// <param name="ratingData">The data for the rating, including the product ID and rating value.</param>
+        /// <returns>Returns the created rating with a 200 status code.</returns>
+        /// <response code="200">Returns the created rating data.</response>
+        /// <response code="400">Bad request if the provided rating data is invalid.</response>
+        /// <response code="401">Unauthorized if the user is not authenticated.</response>
+        /// <response code="500">Internal server error if creating the rating fails.</response>
+        [HttpPost("createRating")]
+        public async Task<IActionResult> CreateRating(CreateRatingDto ratingData)
+        {
+            var userIdClaim = User.Claims
+           .FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier && Guid.TryParse(claim.Value, out _));
+
+            var userId = Guid.Parse(userIdClaim.Value);
+
+            var rating = await _gameService.CreateRating(userId, ratingData);
+
+            return Ok(rating);
+        }
+
+        /// <summary>
+        /// Deletes a rating for a specified product by the authenticated user.
+        /// </summary>
+        /// <param name="deleteRatingData">The data for the rating to delete, including the product ID.</param>
+        /// <returns>Returns a 204 status code if the rating is successfully deleted.</returns>
+        /// <response code="204">No content if the rating is successfully deleted.</response>
+        /// <response code="400">Bad request if the provided delete data is invalid.</response>
+        /// <response code="401">Unauthorized if the user is not authenticated.</response>
+        /// <response code="404">Not found if the specified rating does not exist.</response>
+        /// <response code="500">Internal server error if deleting the rating fails.</response>
+        [HttpDelete("deleteRating")]
+        public async Task<IActionResult> DeleteRating([FromBody] DeleteRatingDto deleteRatingData)
+        {
+            var userIdClaim = User.Claims
+           .FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier && Guid.TryParse(claim.Value, out _));
+
+            var userId = Guid.Parse(userIdClaim.Value);
+
+            await _gameService.DeleteRating(userId, deleteRatingData);
+
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Retrieves a list of games based on the provided filter, sort, and pagination criteria.
+        /// </summary>
+        /// <param name="queryData">The data for filtering, sorting, and paginating the games list, including genre, age, sort criteria, and pagination options.</param>
+        /// <returns>Returns a list of games with a 200 status code, including pagination data.</returns>
+        /// <response code="200">Returns the list of filtered and sorted games with pagination data.</response>
+        /// <response code="400">Bad request if the provided query parameters are invalid.</response>
+        /// <response code="500">Internal server error if retrieving the games list fails.</response>
+        [HttpGet("list")]
+        [ValidateProductQuery]
+        public async Task<IActionResult> ListGames([FromQuery] ProductQueryDto queryData)
+        {
+            var products = await _gameService.ListGames(queryData);
+
+            return Ok(products);
         }
     }
 }

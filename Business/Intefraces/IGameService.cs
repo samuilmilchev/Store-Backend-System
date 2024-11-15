@@ -10,5 +10,8 @@ namespace Business.Intefraces
         Task<SearchResultDto> CreateGame(CreateProductDto productData);
         Task<SearchResultDto> UpdateGame(int id, UpdateProductDto productData);
         Task<bool> DeleteGame(int id);
+        Task<RatingResponseDto> CreateRating(Guid userId, CreateRatingDto ratingData);
+        Task DeleteRating(Guid userId, DeleteRatingDto deleteRatingData);
+        Task<ProductListResultDto> ListGames(ProductQueryDto queryData);
     }
 }
