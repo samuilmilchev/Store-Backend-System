@@ -44,7 +44,7 @@ namespace WebApp1.Tests.Repository_Tests
             });
             _mapper = config.CreateMapper();
 
-            _gameRepository = new GameRepository(contextForRepo, _mapper);
+            _gameRepository = new GameRepository(contextForRepo);
         }
 
         [Fact]
