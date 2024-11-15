@@ -14,6 +14,5 @@
         public string? Background { get; set; }
         public int Count { get; set; }
         public ICollection<RatingResponseDto> Ratings { get; set; } = new List<RatingResponseDto>();
-
     }
 }

@@ -3,6 +3,7 @@ using Business.Exceptions;
 using Business.Intefraces;
 using DAL.Entities;
 using DAL.Repository.Interfaces;
+using Microsoft.IdentityModel.Tokens;
 using Shared.DTOs;
 
 namespace Business.Services
@@ -29,12 +30,26 @@ namespace Business.Services
 
         public async Task<List<SearchResultDto>> SearchGamesAsync(string term, int limit, int offset)
         {
-            return await _gameRepository.SearchGamesAsync(term, limit, offset);
+            if (term.IsNullOrEmpty())
+            {
+                throw new MyApplicationException(ErrorStatus.InvalidData, "Invalid input.");
+            }
+
+            var products = await _gameRepository.SearchGamesAsync(term, limit, offset);
+
+            return _mapper.Map<List<SearchResultDto>>(products);
         }
 
         public async Task<SearchResultDto> SearchGameByIdAsync(int id)
         {
-            return await _gameRepository.SearchGameByIdAsync(id);
+            if (id <= 0 || id > _gameRepository.GetProducts().Count())
+            {
+                throw new MyApplicationException(ErrorStatus.InvalidData, "Invalid input.");
+            }
+
+            var product = await _gameRepository.SearchGameByIdAsync(id);
+
+            return _mapper.Map<SearchResultDto>(product);
         }
 
         public async Task<SearchResultDto> CreateGame(CreateProductDto productData)
@@ -48,7 +63,14 @@ namespace Business.Services
                 productData.BackgroundUrl = background.Url.ToString();
             }
 
-            return await _gameRepository.CreateGame(productData);
+            var product = _mapper.Map<Product>(productData);
+
+            product.Logo = productData.LogoUrl;
+            product.Background = productData.BackgroundUrl;
+
+            await _gameRepository.CreateGame(product);
+
+            return _mapper.Map<SearchResultDto>(product);
         }
 
         public async Task<SearchResultDto> UpdateGame(int id, UpdateProductDto productData)
@@ -67,17 +89,45 @@ namespace Business.Services
                 productData.BackgroundUrl = background.Url.ToString();
             }
 
-            return await _gameRepository.UpdateGame(id, productData);
+            var product = await _gameRepository.SearchGameByIdAsync(id);
+
+            if (product == null)
+            {
+                throw new MyApplicationException(ErrorStatus.NotFound, $"Product with id {id} does not exist.");
+            }
+
+            _mapper.Map(productData, product);
+
+            if (productData.LogoUrl != null)
+            {
+                product.Logo = productData.LogoUrl;
+            }
+
+            if (productData.BackgroundUrl != null)
+            {
+                product.Background = productData.BackgroundUrl;
+            }
+
+            await _gameRepository.UpdateGame(product);
+
+            return _mapper.Map<SearchResultDto>(product);
         }
 
         public async Task<bool> DeleteGame(int id)
         {
-            return await _gameRepository.DeleteGame(id);
+            var product = await _gameRepository.SearchGameByIdAsync(id);
+
+            if (product == null)
+            {
+                throw new MyApplicationException(ErrorStatus.NotFound, $"Product with id {id} was not found.");
+            }
+
+            return await _gameRepository.DeleteGame(product);
         }
 
         public async Task<RatingResponseDto> CreateRating(Guid userId, CreateRatingDto ratingData)
         {
-            var product = await _gameRepository.FindGameById(ratingData.ProductId);
+            var product = await _gameRepository.SearchGameByIdAsync(ratingData.ProductId);
 
             if (product == null)
             {
@@ -138,7 +188,7 @@ namespace Business.Services
             };
         }
 
-        public double CalculateTotalRatingCreate(Product product, ProductRating rating)
+        private double CalculateTotalRatingCreate(Product product, ProductRating rating)
         {
             var sumOfRatings = product.Ratings.Sum(x => x.Rating);
             sumOfRatings += rating.Rating;
@@ -148,7 +198,7 @@ namespace Business.Services
             return sumOfRatings / countRatings;
         }
 
-        public double CalculateTotalRatingDelete(Product product, ProductRating rating)
+        private double CalculateTotalRatingDelete(Product product, ProductRating rating)
         {
             var sumOfRatings = product.Ratings.Sum(x => x.Rating);
             sumOfRatings -= rating.Rating;

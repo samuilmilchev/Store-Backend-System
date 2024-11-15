@@ -133,15 +133,6 @@ namespace WebApp1.Tests.Repository_Tests
         }
 
         [Fact]
-        public async Task SearchGamesAsync_ThrowsNotFoundException_WhenTermIsEmpty()
-        {
-            // Act
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.SearchGamesAsync("", 10, 0));
-            // Assert
-            Assert.Equal("Invalid input.", exception.Message);
-        }
-
-        [Fact]
         public async Task SearchGamesAsync_ReturnsEmptyList_WhenOffsetExceedsResults()
         {
             // Act
@@ -168,7 +159,7 @@ namespace WebApp1.Tests.Repository_Tests
         {
             // Act & Assert
             var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.SearchGameByIdAsync(999));
-            Assert.Equal("Invalid input.", exception.Message);
+            Assert.Equal($"Product with id {999} does not exist.", exception.Message);
         }
 
         [Fact]
@@ -186,7 +177,7 @@ namespace WebApp1.Tests.Repository_Tests
         public async Task CreateProduct_AddsNewProductToDatabase()
         {
             // Arrange
-            var newProduct = new CreateProductDto()
+            var newProduct = new Product()
             {
                 Name = "New Game",
                 Platform = Platforms.Windows,
@@ -211,8 +202,7 @@ namespace WebApp1.Tests.Repository_Tests
         public async Task UpdateProduct_UpdatesExistingProductFields()
         {
             // Arrange
-            var productId = 1;
-            var updatedProduct = new UpdateProductDto
+            var updatedProduct = new Product
             {
                 Name = "Updated Game Name",
                 Platform = Platforms.Mac,
@@ -220,12 +210,12 @@ namespace WebApp1.Tests.Repository_Tests
             };
 
             // Act
-            await _gameRepository.UpdateGame(productId, updatedProduct);
+            await _gameRepository.UpdateGame(updatedProduct);
 
             // Assert
             using (var context = new ApplicationDbContext(_options))
             {
-                var productInDb = await context.Products.FindAsync(productId);
+                var productInDb = await context.Products.FindAsync(updatedProduct.Id);
                 Assert.NotNull(productInDb);
                 Assert.Equal("Updated Game Name", productInDb.Name);
                 Assert.Equal(Platforms.Mac, productInDb.Platform);
@@ -234,54 +224,26 @@ namespace WebApp1.Tests.Repository_Tests
         }
 
         [Fact]
-        public async Task UpdateProduct_ThrowExceptionNotFound()
+        public async Task DeleteProduct_RemovesProductFromDatabase()
         {
             // Arrange
-            var productId = 5;
-            var updatedProduct = new UpdateProductDto
+            var product = new Product
             {
-                Name = "Updated Game Name",
+                Name = "Game Name",
                 Platform = Platforms.Mac,
                 Genre = "Strategy"
             };
 
             // Act
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.UpdateGame(productId, updatedProduct));
-
-            // Assert
-            Assert.Equal($"Product with id {productId} does not exist.", exception.Message);
-        }
-
-        [Fact]
-        public async Task DeleteProduct_RemovesProductFromDatabase()
-        {
-            // Arrange
-            var productId = 1;
-
-            // Act
-            await _gameRepository.DeleteGame(productId);
+            await _gameRepository.DeleteGame(product);
 
             // Assert
             using (var context = new ApplicationDbContext(_options))
             {
-                var productInDb = await context.Products.FindAsync(productId);
+                var productInDb = await context.Products.FindAsync(product.Id);
 
                 Assert.True(productInDb.IsDeleted);
             }
-        }
-
-        [Fact]
-        public async Task DeleteProduct_ThrowExceptionNotFound()
-        {
-            // Arrange
-            var productId = 5;
-
-            // Act
-            var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameRepository.DeleteGame(productId));
-
-            // Assert
-            Assert.Equal($"Product with id {productId} was not found.", exception.Message);
-
         }
 
         [Fact]
