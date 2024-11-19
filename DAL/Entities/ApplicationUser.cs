@@ -6,5 +6,6 @@ namespace DAL.Entities
     {
         public UserAddress? AddressDelivery { get; set; }
         public ICollection<ProductRating> Ratings { get; set; } = new List<ProductRating>();
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

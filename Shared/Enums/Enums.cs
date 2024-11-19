@@ -27,4 +27,11 @@
         Asc,
         Desc
     }
+
+    public enum OrderStatus
+    {
+        Pending,
+        Completed,
+        Canceled
+    }
 }
