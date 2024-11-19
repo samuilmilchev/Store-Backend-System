@@ -85,5 +85,22 @@ namespace Business.Services
 
             return _mapper.Map<UserProfileModel>(user);
         }
+
+        public async Task<ApplicationUser> GetUserByIdAsync(Guid userId)
+        {
+            var user = await _userManager.Users
+                .Include(u => u.AddressDelivery)
+                .Include(u => u.Orders)
+                .ThenInclude(u => u.Items)
+                .ThenInclude(u => u.Product)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+            {
+                throw new MyApplicationException(ErrorStatus.NotFound, "User not found");
+            }
+
+            return user;
+        }
     }
 }

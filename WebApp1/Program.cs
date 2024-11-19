@@ -45,12 +45,14 @@ namespace WebApp1
             builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 
             builder.Services.AddScoped<IGameRepository, GameRepository>();
+            builder.Services.AddScoped<IOrdersRepository, OrdersRepository>();
 
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IGameService, GameService>();
             builder.Services.AddScoped<IImagesService, ImagesService>();
+            builder.Services.AddScoped<IOrdersService, OrdersService>();
             builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
 
             var key = Encoding.ASCII.GetBytes(builder.Configuration["Jwt:Key"]);
@@ -82,6 +84,7 @@ namespace WebApp1
             builder.Services.AddAutoMapper(typeof(UserProfile));
             builder.Services.AddAutoMapper(typeof(ProductProfile));
             builder.Services.AddAutoMapper(typeof(RatingProfile));
+            builder.Services.AddAutoMapper(typeof(OrderProfile));
 
             builder.Services.AddSwaggerDocumentation();
 
