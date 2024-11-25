@@ -15,6 +15,6 @@ namespace DAL.Repository.Interfaces
         Task DeleteRating(Guid userId, ProductRating rating);
         Task<List<Product>> ListGames(ProductQueryDto queryData);
         List<ProductRating> GetRatings();
-        List<Product> GetProducts();
+        Task<List<Product>> GetProducts();
     }
 }

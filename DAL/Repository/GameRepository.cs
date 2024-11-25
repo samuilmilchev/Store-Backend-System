@@ -68,7 +68,7 @@ namespace DAL.Repository
         public async Task<Product> CreateGame(Product product)
         {
             _context.Products.Add(product);
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             return product;
         }
@@ -147,12 +147,12 @@ namespace DAL.Repository
             return ratings;
         }
 
-        public List<Product> GetProducts()
+        public async Task<List<Product>> GetProducts()
         {
-            var products = _context.Products
+            var products = await _context.Products
                 .Where(p => !p.IsDeleted)
                 .Include(p => p.Ratings)
-                .ToList();
+                .ToListAsync();
 
             return products;
         }
