@@ -250,11 +250,12 @@ namespace WebApp1.Tests.Repository_Tests
         public async Task CreateRating_ReturnsRating_WhenValidData()
         {
             // Arrange
-            var product = _gameRepository.GetProducts().First();
-            var rating = new ProductRating { ProductId = product.Id, Rating = 8, UserId = Guid.NewGuid() };
+            var product = await _gameRepository.GetProducts();
+            var products = product.ToList().First();
+            var rating = new ProductRating { ProductId = products.Id, Rating = 8, UserId = Guid.NewGuid() };
 
             // Act
-            var result = await _gameRepository.CreateRating(product, rating);
+            var result = await _gameRepository.CreateRating(products, rating);
 
             // Assert
             Assert.NotNull(result);
@@ -267,8 +268,9 @@ namespace WebApp1.Tests.Repository_Tests
         {
             // Arrange
             var userId = Guid.NewGuid();
-            var product = _gameRepository.GetProducts().First();
-            var rating = new ProductRating { ProductId = product.Id, UserId = userId, Rating = 7 };
+            var product = await _gameRepository.GetProducts();
+            var products = product.ToList().First();
+            var rating = new ProductRating { ProductId = products.Id, UserId = userId, Rating = 7 };
 
             using (var context = new ApplicationDbContext(_options))
             {
@@ -282,7 +284,7 @@ namespace WebApp1.Tests.Repository_Tests
             // Assert
             using (var context = new ApplicationDbContext(_options))
             {
-                var result = context.Ratings.FirstOrDefault(r => r.UserId == userId && r.ProductId == product.Id);
+                var result = context.Ratings.FirstOrDefault(r => r.UserId == userId && r.ProductId == products.Id);
                 Assert.Null(result);
             }
         }

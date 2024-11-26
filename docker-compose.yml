@@ -1,7 +1,5 @@
-version: '3.4'
-
 services:
-  web:
+  webapp1:
     build:
       context: .
       dockerfile: WebApp1/Dockerfile
@@ -11,6 +9,8 @@ services:
       - database
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__DefaultConnection: "Server=database;Database=YourDatabase;User Id=sa;Password=YourStrongPassword123!"
+    entrypoint: ["./wait-for-it.sh", "database:1433", "--", "dotnet", "WebApp1.dll"]
     networks:
       - app_network
 

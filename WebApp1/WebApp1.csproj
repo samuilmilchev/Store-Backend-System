@@ -7,6 +7,7 @@
     <UserSecretsId>aspnet-WebApp1-1faa8060-3129-4908-a4f4-4361b4f290eb</UserSecretsId>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
   </PropertyGroup>
 
   <ItemGroup>

@@ -172,7 +172,7 @@ namespace WebApp1.Tests.ControllerTests
             var allProducts = new List<Product> { product };
 
             _mockGameRepository.Setup(repo => repo.GetProducts())
-                .Returns(allProducts);
+                .ReturnsAsync(allProducts);
 
             _mockGameRepository.Setup(repo => repo.SearchGameByIdAsync(It.IsAny<int>()))
                 .ReturnsAsync(product);
@@ -197,11 +197,11 @@ namespace WebApp1.Tests.ControllerTests
             };
 
             _mockGameRepository.Setup(repo => repo.GetProducts())
-                .Returns(allProducts);
+                .ReturnsAsync(allProducts);
 
             _mockGameRepository
                 .Setup(repo => repo.SearchGameByIdAsync(productId))
-                .ThrowsAsync(new MyApplicationException(ErrorStatus.NotFound, "Invalid input."));
+                .ThrowsAsync(new MyApplicationException(ErrorStatus.InvalidData, "Invalid input."));
 
             // Act & Assert
             var exception = await Assert.ThrowsAsync<MyApplicationException>(() => _gameService.SearchGameByIdAsync(productId));
@@ -427,7 +427,7 @@ namespace WebApp1.Tests.ControllerTests
             var rating = new ProductRating { ProductId = deleteRatingData.ProductId, UserId = userId, Rating = 5 };
 
             _mockGameRepository.Setup(repo => repo.GetProducts())
-                               .Returns(new List<Product> { product });
+                               .ReturnsAsync(new List<Product> { product });
             _mockGameRepository.Setup(repo => repo.GetRatings())
                                .Returns(new List<ProductRating> { rating });
 
@@ -443,7 +443,7 @@ namespace WebApp1.Tests.ControllerTests
             var deleteRatingData = new DeleteRatingDto { ProductId = 999 };
 
             _mockGameRepository.Setup(repo => repo.GetProducts())
-                               .Returns(new List<Product>());
+                               .ReturnsAsync(new List<Product>());
             _mockGameRepository.Setup(repo => repo.GetRatings())
                                .Returns(new List<ProductRating>());
 
