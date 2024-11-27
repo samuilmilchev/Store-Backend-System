@@ -1,38 +1,37 @@
+version: '3.4'
+
 services:
+
   webapp1:
     build:
       context: .
       dockerfile: WebApp1/Dockerfile
     ports:
       - "8080:8080"
-    depends_on:
-      - database
     environment:
       ASPNETCORE_ENVIRONMENT: "Production"
-      ConnectionStrings__DefaultConnection: "Server=database;Database=YourDatabase;User Id=sa;Password=YourStrongPassword123!"
-    entrypoint: ["./wait-for-it.sh", "database:1433", "--", "dotnet", "WebApp1.dll"]
+      ConnectionStrings__DefaultConnection: "Server=ms-sql-server,1433;Database=webapi;User=SA;Password=Passw0rd123;MultipleActiveResultSets=True;TrustServerCertificate=True;"
     networks:
-      - app_network
+        - elastic
 
-  database:
-    image: mcr.microsoft.com/mssql/server:2019-latest
-    environment:
-      SA_PASSWORD: "YourStrongPassword123!"
-      ACCEPT_EULA: "Y"
+  ms-sql-server:
+    image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
     ports:
-      - "1433:1433"
-    volumes:
-      - sql_data:/var/opt/mssql
+        - "1453:1433"
     networks:
-      - app_network
-    healthcheck:
-      test: ["CMD-SHELL", "sqlcmd -S localhost -U sa -P YourStrongPassword123! -Q \"SELECT 1\""]
-      interval: 30s
-      retries: 5
-
-networks:
-  app_network:
-    driver: bridge
+        - elastic
+    environment:
+        ACCEPT_EULA: "Y"
+        SA_PASSWORD: Passw0rd123
+        MSSQL_PID: Express
+    volumes:
+      - db_data:/var/opt/mssql
 
 volumes:
-  sql_data:
+  db_data:
+  esdata:
+    driver: local
+
+networks:
+  elastic:
+    driver: bridge
