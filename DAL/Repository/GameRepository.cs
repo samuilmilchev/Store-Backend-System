@@ -28,6 +28,7 @@ namespace DAL.Repository
                     Platform = g.Key.ToString(),
                     ProductCount = g.Count()
                 })
+                .AsNoTracking()
                 .ToListAsync();
 
             return topPlatforms;
@@ -40,6 +41,7 @@ namespace DAL.Repository
                 .Where(p => p.Name.Contains(term))
                 .Skip(offset)
                 .Take(limit)
+                .AsNoTracking()
                 .ToListAsync();
 
             if (products == null)
