@@ -1,0 +1,37 @@
+version: '3.4'
+
+services:
+
+  webapp1:
+    build:
+      context: .
+      dockerfile: WebApp1/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      ConnectionStrings__DefaultConnection: "Server=ms-sql-server,1433;Database=webapi;User=SA;Password=Passw0rd123;MultipleActiveResultSets=True;TrustServerCertificate=True;"
+    networks:
+        - elastic
+
+  ms-sql-server:
+    image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+    ports:
+        - "1453:1433"
+    networks:
+        - elastic
+    environment:
+        ACCEPT_EULA: "Y"
+        SA_PASSWORD: Passw0rd123
+        MSSQL_PID: Express
+    volumes:
+      - db_data:/var/opt/mssql
+
+volumes:
+  db_data:
+  esdata:
+    driver: local
+
+networks:
+  elastic:
+    driver: bridge

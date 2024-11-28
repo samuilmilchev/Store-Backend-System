@@ -42,10 +42,7 @@ namespace Business.Services
 
         public async Task<SearchResultDto> SearchGameByIdAsync(int id)
         {
-            if (id <= 0 || id > _gameRepository.GetProducts().Count())
-            {
-                throw new MyApplicationException(ErrorStatus.InvalidData, "Invalid input.");
-            }
+            var products = await _gameRepository.GetProducts();
 
             var product = await _gameRepository.SearchGameByIdAsync(id);
 
@@ -160,8 +157,9 @@ namespace Business.Services
                 throw new MyApplicationException(ErrorStatus.NotFound, $"Rating was not found.");
             }
 
-            var product = _gameRepository.GetProducts()
-                .FirstOrDefault(x => x.Id == deleteRatingData.ProductId);
+            var products = await _gameRepository.GetProducts();
+
+            var product = products.FirstOrDefault(x => x.Id == deleteRatingData.ProductId);
 
             if (product == null)
             {
