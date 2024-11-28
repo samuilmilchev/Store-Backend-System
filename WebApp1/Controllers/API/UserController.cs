@@ -5,6 +5,7 @@ using DAL.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
 using Shared.Models;
 using System.Security.Claims;
 
@@ -18,12 +19,14 @@ namespace WebApp1.Controllers.API
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly IUserService _userService;
         private readonly ApplicationDbContext _dbContext;
-        public UserController(UserManager<ApplicationUser> userManager, ApplicationDbContext dbContext, SignInManager<ApplicationUser> signInManager, IUserService userService)
+        private readonly IMemoryCache _cache;
+        public UserController(UserManager<ApplicationUser> userManager, ApplicationDbContext dbContext, SignInManager<ApplicationUser> signInManager, IUserService userService, IMemoryCache chache)
         {
             _userManager = userManager;
             _dbContext = dbContext;
             _signInManager = signInManager;
             _userService = userService;
+            _cache = chache;
         }
 
         /// <summary>
@@ -41,6 +44,9 @@ namespace WebApp1.Controllers.API
            .FirstOrDefault(claim => claim.Type == ClaimTypes.NameIdentifier && Guid.TryParse(claim.Value, out _));
 
             var userId = Guid.Parse(userIdClaim.Value);
+
+            var cacheKey = $"UserProfile_{userId}";
+            _cache.Remove(cacheKey);
 
             await _userService.UpdateUserAsync(userId, updateModel);
             return Ok();
@@ -87,7 +93,17 @@ namespace WebApp1.Controllers.API
 
             var userId = Guid.Parse(userIdClaim.Value);
 
-            var userProfile = await _userService.GetUserProfileAsync(userId);
+            var cacheKey = $"UserProfile_{userId}";
+
+            if (!_cache.TryGetValue(cacheKey, out UserProfileModel userProfile))
+            {
+                userProfile = await _userService.GetUserProfileAsync(userId);
+
+                var cacheEntryOptions = new MemoryCacheEntryOptions()
+                    .SetSlidingExpiration(TimeSpan.FromMinutes(10));
+
+                _cache.Set(cacheKey, userProfile, cacheEntryOptions);
+            }
 
             return Ok(userProfile);
         }

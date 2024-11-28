@@ -7,12 +7,14 @@ using DAL.Repository;
 using DAL.Repository.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Shared.Helpers;
 using System.ComponentModel.DataAnnotations;
+using System.IO.Compression;
 using System.Text;
 using WebApp1.Configurations;
 using WebApp1.Middleware;
@@ -78,15 +80,35 @@ namespace WebApp1
 
             builder.Services.AddHealthChecks();
             builder.Services.AddRazorPages();
-            builder.Services.AddControllers();
+
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                });
 
             builder.Services.AddAutoMapper(typeof(Program));
             builder.Services.AddAutoMapper(typeof(UserProfile));
             builder.Services.AddAutoMapper(typeof(ProductProfile));
             builder.Services.AddAutoMapper(typeof(RatingProfile));
             builder.Services.AddAutoMapper(typeof(OrderProfile));
+            builder.Services.AddMemoryCache();
 
             builder.Services.AddSwaggerDocumentation();
+
+            builder.Services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true;
+                options.Providers.Add<GzipCompressionProvider>();
+                options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+                    new[] { "application/json", "application/xml", "text/plain" });
+            });
+
+            builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+            {
+                options.Level = CompressionLevel.Optimal;
+            });
 
 
             //        builder.Services.AddHealthChecks()
@@ -106,6 +128,8 @@ namespace WebApp1
             {
                 throw new InvalidOperationException($"Invalid configuration: {string.Join(", ", validationResults.Select(r => r.ErrorMessage))}");
             }
+
+            app.UseResponseCompression();
 
             app.UseCustomExceptionHandler(app.Environment);
 
